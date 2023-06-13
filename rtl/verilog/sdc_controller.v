@@ -60,6 +60,7 @@ module sdc_controller(
            clk,
            rst,
 
+           we,
            addr,
            data_in,
            data_out,
@@ -80,7 +81,8 @@ module sdc_controller(
 input wire clk;
 input wire rst;
 
-input wire [7:0] addr;
+input wire we;
+input wire [6:0] addr;
 input wire [7:0] data_in;
 output wire [7:0] data_out;
 
@@ -293,9 +295,10 @@ sd_controller_wb sd_controller_wb0(
     .rst                            (rst),
     .sd_clk                         (sd_clk_o),
 
+    .we                             (we),   
     .addr                           (addr),
-    .data_in                         (data_in),
-    .data_out                        (data_out),
+    .data_in                        (data_in),
+    .data_out                       (data_out),
 
     .cmd_start                      (cmd_start),
     .data_int_rst                   (data_int_rst),

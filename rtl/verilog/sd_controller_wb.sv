@@ -52,7 +52,8 @@ module sd_controller_wb(
            rst,
            sd_clk,
 
-           addr, // the highest bit is write enable
+           we, 
+           addr,
            data_in,
            data_out,
 
@@ -83,9 +84,10 @@ input wire clk;
 input wire rst;
 input wire sd_clk;
 
-input wire [7:0] addr;
+input wire we;
+input wire [6:0] addr;
 input wire [7:0] data_in;
-output wire [7:0] data_out;
+output logic [7:0] data_out;
 
 output reg cmd_start;
 //Buss accessible registers
@@ -114,23 +116,21 @@ output [31:0] dma_addr_reg;
 parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
 parameter capabilies_reg = 16'b0000_0000_0000_0000;
 
-assign we = addr[7];
 wire [6:0] reg_addr = {addr[6:2], 2'b00};
 wire [1:0] byte_sel = addr[1:0];
 
-//TODO: un-short the data output
-byte_en_reg #(32) argument_r(sd_clk, rst, we && reg_addr == `argument, byte_sel, data_in, data_out, argument_reg);
-byte_en_reg #(`CMD_REG_SIZE) command_r(sd_clk, rst, we && reg_addr == `command, byte_sel, data_in, data_out, command_reg);
-byte_en_reg #(1) reset_r(sd_clk, rst, we && reg_addr == `reset, byte_sel, data_in, data_out, software_reset_reg);
-byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(sd_clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, data_out, cmd_timeout_reg);
-byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(sd_clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_out, data_timeout_reg);
-byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(sd_clk, rst, we && reg_addr == `blksize, byte_sel, data_in, data_out, block_size_reg);
-byte_en_reg #(1) controll_r(sd_clk, rst, we && reg_addr == `controller, byte_sel, data_in, data_out, controll_setting_reg);
-byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(sd_clk, rst, we && reg_addr == `cmd_iser, byte_sel, data_in, data_out, cmd_int_enable_reg);
-byte_en_reg #(8) clock_d_r(sd_clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, data_out, clock_divider_reg);
-byte_en_reg #(`INT_DATA_SIZE) data_int_r(sd_clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_out, data_int_enable_reg);
-byte_en_reg #(`BLKCNT_W) block_count_r(sd_clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, data_out, block_count_reg);
-byte_en_reg #(32) dma_addr_r(sd_clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, data_out, dma_addr_reg);
+byte_en_reg #(32) argument_r(sd_clk, rst, we && reg_addr == `argument, byte_sel, data_in, argument_reg);
+byte_en_reg #(`CMD_REG_SIZE) command_r(sd_clk, rst, we && reg_addr == `command, byte_sel, data_in, command_reg);
+byte_en_reg #(1) reset_r(sd_clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg);
+byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(sd_clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
+byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(sd_clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
+byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(sd_clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
+byte_en_reg #(1) controll_r(sd_clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
+byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(sd_clk, rst, we && reg_addr == `cmd_iser, byte_sel, data_in, cmd_int_enable_reg);
+byte_en_reg #(8) clock_d_r(sd_clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
+byte_en_reg #(`INT_DATA_SIZE) data_int_r(sd_clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_int_enable_reg);
+byte_en_reg #(`BLKCNT_W) block_count_r(sd_clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
+byte_en_reg #(32) dma_addr_r(sd_clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, dma_addr_reg);
 /*
 always @(posedge clk)
 begin
@@ -156,37 +156,39 @@ begin
             wb_ack_o <= wb_cyc_i & wb_stb_i & ~wb_ack_o;
         end
     end
-end
+end*/
 
-always @(posedge wb_clk_i or posedge wb_rst_i)begin
-    if (wb_rst_i == 1)
-        wb_dat_o <= 0;
-    else
-        if (wb_stb_i & wb_cyc_i) begin //CS
-            wb_dat_o <= 32'd0;
-            case (wb_adr_i)
-                `argument: wb_dat_o <= argument_reg;
-                `command: wb_dat_o[`CMD_REG_SIZE-1:0] <= command_reg;
-                `resp0: wb_dat_o <= response_0_reg;
-                `resp1: wb_dat_o <= response_1_reg;
-                `resp2: wb_dat_o <= response_2_reg;
-                `resp3: wb_dat_o <= response_3_reg;
-                `controller: wb_dat_o[0] <= controll_setting_reg;
-                `blksize: wb_dat_o[`BLKSIZE_W-1:0] <= block_size_reg;
-                `voltage: wb_dat_o <= voltage_controll_reg;
-                `reset: wb_dat_o[0] <= software_reset_reg;
-                `cmd_timeout: wb_dat_o[`CMD_TIMEOUT_W-1:0] <= cmd_timeout_reg;
-                `data_timeout: wb_dat_o[`DATA_TIMEOUT_W-1:0] <= data_timeout_reg;
-                `cmd_isr: wb_dat_o[`INT_CMD_SIZE-1:0] <= cmd_int_status_reg;
-                `cmd_iser: wb_dat_o[`INT_CMD_SIZE-1:0] <= cmd_int_enable_reg;
-                `clock_d: wb_dat_o[7:0] <= clock_divider_reg;
-                `capa: wb_dat_o[15:0] <= capabilies_reg;
-                `data_isr: wb_dat_o[`INT_DATA_SIZE-1:0] <= data_int_status_reg;
-                `blkcnt: wb_dat_o[`BLKCNT_W-1:0] <= block_count_reg;
-                `data_iser: wb_dat_o[`INT_DATA_SIZE-1:0] <= data_int_enable_reg;
-                `dst_src_addr: wb_dat_o <= dma_addr_reg;
-            endcase
-        end
+logic [31:0] wb_dat_o;
+always_comb begin
+    case (reg_addr)
+        `argument: wb_dat_o = argument_reg;
+        `command: wb_dat_o[`CMD_REG_SIZE-1:0] = command_reg;
+        `resp0: wb_dat_o = response_0_reg;
+        `resp1: wb_dat_o = response_1_reg;
+        `resp2: wb_dat_o = response_2_reg;
+        `resp3: wb_dat_o = response_3_reg;
+        `controller: wb_dat_o[0] = controll_setting_reg;
+        `blksize: wb_dat_o[`BLKSIZE_W-1:0] = block_size_reg;
+        `voltage: wb_dat_o = voltage_controll_reg;
+        `reset: wb_dat_o[0] = software_reset_reg;
+        `cmd_timeout: wb_dat_o[`CMD_TIMEOUT_W-1:0] = cmd_timeout_reg;
+        `data_timeout: wb_dat_o[`DATA_TIMEOUT_W-1:0] = data_timeout_reg;
+        `cmd_isr: wb_dat_o[`INT_CMD_SIZE-1:0] = cmd_int_status_reg;
+        `cmd_iser: wb_dat_o[`INT_CMD_SIZE-1:0] = cmd_int_enable_reg;
+        `clock_d: wb_dat_o[7:0] = clock_divider_reg;
+        `capa: wb_dat_o[15:0] = capabilies_reg;
+        `data_isr: wb_dat_o[`INT_DATA_SIZE-1:0] = data_int_status_reg;
+        `blkcnt: wb_dat_o[`BLKCNT_W-1:0] = block_count_reg;
+        `data_iser: wb_dat_o[`INT_DATA_SIZE-1:0] = data_int_enable_reg;
+        `dst_src_addr: wb_dat_o = dma_addr_reg;
+        default: wb_dat_o = 32'd0;
+    endcase
+    case (byte_sel)
+        2'b00: data_out = wb_dat_o[7:0];
+        2'b01: data_out = wb_dat_o[15:8];
+        2'b10: data_out = wb_dat_o[23:16];
+        2'b11: data_out = wb_dat_o[31:24];
+    endcase
 end
-*/
+//*/
 endmodule

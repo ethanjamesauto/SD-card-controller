@@ -5,9 +5,10 @@ reg rst = 0;
 
 initial repeat (512) #1 clk = ~clk;
 
-reg [7:0] addr;
+reg [6:0] addr;
+reg we = 0;
 reg [7:0] data_in;
-//reg [7:0] data_out;
+wire [7:0] data_out;
 
 initial begin
     $dumpfile("verilog_tb.vcd");
@@ -15,17 +16,24 @@ initial begin
     #3 rst = 1;
     #2 rst = 0;
     data_in = 8'b10101010;
-    #8 addr = 8'b10000000;
+    #8 addr = 7'b0000000;
+    #2 we = 1;
+    #4 we = 0;
+
     data_in = 8'b01010101;
-    #8 addr = 8'b10000011;
+    #8 addr = 7'b0000011;
+    #2 we = 1;
+    #4 we = 0;
 
     data_in = 8'h35;
-    #8 addr = 8'b10000100;
-    #2 addr = 8'b00000101;
+    #8 addr = 7'b0000100;
+    #2 addr = 7'b0000101;
+    #2 we = 1;
+    #4 we = 0;
 
     data_in = 8'b11011;
-    #8 addr = {1'b1, 7'h38 + 2'b00};
-    #8 addr = {1'b0, 7'h44 + 2'b00};
+    #8 addr = {7'h38 + 2'b00};
+    #8 addr = {7'h44 + 2'b00};
 
 end
 
@@ -33,8 +41,9 @@ sdc_controller sdc_controller_inst (
     .clk(clk),
     .rst(rst),
     .addr(addr),
-    .data_in(data_in)
-    //.data_out(data_out)
+    .data_in(data_in),
+    .data_out(data_out),
+    .we(we)
 );
 /*
 byte_en_reg reg0(
