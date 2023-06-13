@@ -59,6 +59,11 @@
 module sdc_controller(
            clk,
            rst,
+
+           addr,
+           data_in,
+           data_out,
+
            //SD BUS
            sd_cmd_dat_i, 
            sd_cmd_out_o, 
@@ -74,6 +79,10 @@ module sdc_controller(
 
 input wire clk;
 input wire rst;
+
+input wire [7:0] addr;
+input wire [7:0] data_in;
+output wire [7:0] data_out;
 
 //input card_detect;
 input wire [3:0] sd_dat_dat_i;
@@ -283,6 +292,11 @@ sd_controller_wb sd_controller_wb0(
     .clk                            (clk),
     .rst                            (rst),
     .sd_clk                         (sd_clk_o),
+
+    .addr                           (addr),
+    .data_in                         (data_in),
+    .data_out                        (data_out),
+
     .cmd_start                      (cmd_start),
     .data_int_rst                   (data_int_rst),
     .cmd_int_rst                    (cmd_int_rst),
