@@ -1,3 +1,7 @@
+This is a WIP modified version of the Wishbone SD card controller intended for smaller FPGAs with less resources.
+It makes the following changes:
+* Replaces Wishbone bus with 8-bit SPI interface, with an 8-bit address and 8-bit data in/out per transfer
+* Removes clock domain crossing between bus and SD card
 
 Wishbone SD Card Controller IP Core
 ===================================
