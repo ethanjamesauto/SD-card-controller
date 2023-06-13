@@ -48,17 +48,14 @@
 `include "sd_defines.h"
 
 module sd_controller_wb(
-           // WISHBONE slave
-           wb_clk_i, 
-           wb_rst_i, 
-           wb_dat_i, 
-           wb_dat_o,
-           wb_adr_i, 
-           wb_sel_i, 
-           wb_we_i, 
-           wb_cyc_i, 
-           wb_stb_i, 
-           wb_ack_o,
+           clk,
+           rst,
+
+           we,
+           addr,
+           data_in,
+           data_out,
+
            cmd_start,
            data_int_rst,
            cmd_int_rst,
@@ -82,20 +79,14 @@ module sd_controller_wb(
            data_int_enable_reg
        );
 
-// WISHBONE common
-input wb_clk_i;     // WISHBONE clock
-input wb_rst_i;     // WISHBONE reset
-input [31:0] wb_dat_i;     // WISHBONE data input
-output reg [31:0] wb_dat_o;     // WISHBONE data output
-// WISHBONE error output
+input wire clk;
+input wire rst;
 
-// WISHBONE slave
-input [7:0] wb_adr_i;     // WISHBONE address input
-input [3:0] wb_sel_i;     // WISHBONE byte select input
-input wb_we_i;      // WISHBONE write enable input
-input wb_cyc_i;     // WISHBONE cycle input
-input wb_stb_i;     // WISHBONE strobe input
-output reg wb_ack_o;     // WISHBONE acknowledge output
+input wire we;
+input wire [7:0] addr;
+input wire [7:0] data_in;
+output wire [7:0] data_out;
+
 output reg cmd_start;
 //Buss accessible registers
 output [31:0] argument_reg;
@@ -125,6 +116,7 @@ wire we;
 parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
 parameter capabilies_reg = 16'b0000_0000_0000_0000;
 
+/*
 assign we = (wb_we_i && ((wb_stb_i && wb_cyc_i) || wb_ack_o)) ? 1'b1 : 1'b0;
 
 byte_en_reg #(32) argument_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `argument, wb_sel_i, wb_dat_i, argument_reg);
@@ -196,5 +188,5 @@ always @(posedge wb_clk_i or posedge wb_rst_i)begin
             endcase
         end
 end
-
+*/
 endmodule

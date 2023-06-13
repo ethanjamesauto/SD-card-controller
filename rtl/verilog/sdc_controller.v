@@ -57,29 +57,8 @@
 `include "sd_defines.h"
 
 module sdc_controller(
-           // WISHBONE common
-           wb_clk_i, 
-           wb_rst_i, 
-           // WISHBONE slave
-           wb_dat_i, 
-           wb_dat_o,
-           wb_adr_i, 
-           wb_sel_i, 
-           wb_we_i, 
-           wb_cyc_i, 
-           wb_stb_i, 
-           wb_ack_o,
-           // WISHBONE master
-           m_wb_dat_o,
-           m_wb_dat_i,
-           m_wb_adr_o, 
-           m_wb_sel_o, 
-           m_wb_we_o,
-           m_wb_cyc_o,
-           m_wb_stb_o, 
-           m_wb_ack_i,
-           m_wb_cti_o, 
-           m_wb_bte_o,
+           clk,
+           rst,
            //SD BUS
            sd_cmd_dat_i, 
            sd_cmd_out_o, 
@@ -89,32 +68,14 @@ module sdc_controller(
            sd_dat_out_o, 
            sd_dat_oe_o, 
            sd_clk_o_pad,
-           sd_clk_i_pad,
            int_cmd, 
            int_data
        );
 
-input wb_clk_i;
-input wb_rst_i;
-input [31:0] wb_dat_i;
-output [31:0] wb_dat_o;
+input wire clk;
+input wire rst;
+
 //input card_detect;
-input [7:0] wb_adr_i;
-input [3:0] wb_sel_i;
-input wb_we_i;
-input wb_cyc_i;
-input wb_stb_i;
-output wb_ack_o;
-output [31:0] m_wb_adr_o;
-output [3:0] m_wb_sel_o;
-output m_wb_we_o;
-input [31:0] m_wb_dat_i;
-output [31:0] m_wb_dat_o;
-output m_wb_cyc_o;
-output m_wb_stb_o;
-input m_wb_ack_i;
-output [2:0] m_wb_cti_o;
-output [1:0] m_wb_bte_o;
 input wire [3:0] sd_dat_dat_i;
 output wire [3:0] sd_dat_out_o;
 output wire sd_dat_oe_o;
@@ -122,7 +83,6 @@ input wire sd_cmd_dat_i;
 output wire sd_cmd_out_o;
 output wire sd_cmd_oe_o;
 output sd_clk_o_pad;
-input wire sd_clk_i_pad;
 output int_cmd, int_data;
 
 //SD clock
@@ -132,7 +92,6 @@ wire [`BLKSIZE_W+`BLKCNT_W-1:0] xfersize;
 wire [31:0] wbm_adr;
 
 wire go_idle;
-wire cmd_start_wb_clk;
 wire cmd_start_sd_clk;
 wire cmd_start;
 wire [1:0] cmd_setting;
@@ -160,54 +119,31 @@ wire we_fifo;
 
 wire data_start_rx;
 wire data_start_tx;
-wire cmd_int_rst_wb_clk;
-wire cmd_int_rst_sd_clk;
 wire cmd_int_rst;
-wire data_int_rst_wb_clk;
-wire data_int_rst_sd_clk;
 wire data_int_rst;
 
-//wb accessible registers
-wire [31:0] argument_reg_wb_clk;
-wire [`CMD_REG_SIZE-1:0] command_reg_wb_clk;
-wire [`CMD_TIMEOUT_W-1:0] cmd_timeout_reg_wb_clk;
-wire [`DATA_TIMEOUT_W-1:0] data_timeout_reg_wb_clk;
-wire [0:0] software_reset_reg_wb_clk;
-wire [31:0] response_0_reg_wb_clk;
-wire [31:0] response_1_reg_wb_clk;
-wire [31:0] response_2_reg_wb_clk;
-wire [31:0] response_3_reg_wb_clk;
-wire [`BLKSIZE_W-1:0] block_size_reg_wb_clk;
-wire [0:0] controll_setting_reg_wb_clk;
-wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg_wb_clk;
-wire [`INT_DATA_SIZE-1:0] data_int_status_reg_wb_clk;
-wire [`INT_CMD_SIZE-1:0] cmd_int_enable_reg_wb_clk;
-wire [`INT_DATA_SIZE-1:0] data_int_enable_reg_wb_clk;
-wire [`BLKCNT_W-1:0] block_count_reg_wb_clk;
-wire [31:0] dma_addr_reg_wb_clk;
-wire [7:0] clock_divider_reg_wb_clk;
 
-wire [31:0] argument_reg_sd_clk;
-wire [`CMD_REG_SIZE-1:0] command_reg_sd_clk;
-wire [`CMD_TIMEOUT_W-1:0] cmd_timeout_reg_sd_clk;
-wire [`DATA_TIMEOUT_W-1:0] data_timeout_reg_sd_clk;
-wire [0:0] software_reset_reg_sd_clk;
-wire [31:0] response_0_reg_sd_clk;
-wire [31:0] response_1_reg_sd_clk;
-wire [31:0] response_2_reg_sd_clk;
-wire [31:0] response_3_reg_sd_clk;
-wire [`BLKSIZE_W-1:0] block_size_reg_sd_clk;
-wire [0:0] controll_setting_reg_sd_clk;
-wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg_sd_clk;
-wire [`INT_DATA_SIZE-1:0] data_int_status_reg_sd_clk;
-wire [`BLKCNT_W-1:0] block_count_reg_sd_clk;
-wire [1:0] dma_addr_reg_sd_clk;
-wire [7:0] clock_divider_reg_sd_clk;
+wire [31:0] argument_reg;
+wire [`CMD_REG_SIZE-1:0] command_reg;
+wire [`CMD_TIMEOUT_W-1:0] cmd_timeout_reg;
+wire [`DATA_TIMEOUT_W-1:0] data_timeout_reg;
+wire [0:0] software_reset_reg;
+wire [31:0] response_0_reg;
+wire [31:0] response_1_reg;
+wire [31:0] response_2_reg;
+wire [31:0] response_3_reg;
+wire [`BLKSIZE_W-1:0] block_size_reg;
+wire [0:0] controll_setting_reg;
+wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg;
+wire [`INT_DATA_SIZE-1:0] data_int_status_reg;
+wire [`BLKCNT_W-1:0] block_count_reg;
+wire [1:0] dma_addr_reg;
+wire [7:0] clock_divider_reg;
 
 sd_clock_divider clock_divider0(
-    .CLK (sd_clk_i_pad),
-    .DIVIDER (clock_divider_reg_sd_clk),
-    .RST  (wb_rst_i),
+    .CLK (clk),
+    .DIVIDER (clock_divider_reg),
+    .RST  (rst),
     .SD_CLK  (sd_clk_o)
     );
 
@@ -215,9 +151,9 @@ assign sd_clk_o_pad  = sd_clk_o ;
 
 sd_cmd_master sd_cmd_master0(
     .sd_clk       (sd_clk_o),
-    .rst          (wb_rst_i | software_reset_reg_sd_clk[0]),
-    .start_i      (cmd_start_sd_clk),
-    .int_status_rst_i(cmd_int_rst_sd_clk),
+    .rst          (rst | software_reset_reg[0]),
+    .start_i      (cmd_start),
+    .int_status_rst_i(cmd_int_rst),
     .setting_o    (cmd_setting),
     .start_xfr_o  (cmd_start_tx),
     .go_idle_o    (go_idle),
@@ -227,20 +163,20 @@ sd_cmd_master sd_cmd_master0(
     .index_ok_i   (cmd_index_ok),
     .busy_i       (sd_data_busy),
     .finish_i     (cmd_finish),
-    .argument_i   (argument_reg_sd_clk),
-    .command_i    (command_reg_sd_clk),
-    .timeout_i    (cmd_timeout_reg_sd_clk),
-    .int_status_o (cmd_int_status_reg_sd_clk),
-    .response_0_o (response_0_reg_sd_clk),
-    .response_1_o (response_1_reg_sd_clk),
-    .response_2_o (response_2_reg_sd_clk),
-    .response_3_o (response_3_reg_sd_clk)
+    .argument_i   (argument_reg),
+    .command_i    (command_reg),
+    .timeout_i    (cmd_timeout_reg),
+    .int_status_o (cmd_int_status_reg),
+    .response_0_o (response_0_reg),
+    .response_1_o (response_1_reg),
+    .response_2_o (response_2_reg),
+    .response_3_o (response_3_reg)
     );
 
 sd_cmd_serial_host cmd_serial_host0(
     .sd_clk     (sd_clk_o),
-    .rst        (wb_rst_i | 
-                 software_reset_reg_sd_clk[0] | 
+    .rst        (rst | 
+                 software_reset_reg[0] | 
                  go_idle),
     .setting_i  (cmd_setting),
     .cmd_i      (cmd),
@@ -256,11 +192,11 @@ sd_cmd_serial_host cmd_serial_host0(
 
 sd_data_master sd_data_master0(
     .sd_clk           (sd_clk_o),
-    .rst              (wb_rst_i | 
-                       software_reset_reg_sd_clk[0]),
+    .rst              (rst | 
+                       software_reset_reg[0]),
     .start_tx_i       (data_start_tx),
     .start_rx_i       (data_start_rx),
-    .timeout_i		  (data_timeout_reg_sd_clk),
+    .timeout_i		  (data_timeout_reg),
     .d_write_o        (d_write),
     .d_read_o         (d_read),
     .start_tx_fifo_o  (start_tx_fifo),
@@ -270,13 +206,13 @@ sd_data_master sd_data_master0(
     .rx_fifo_full_i   (rx_fifo_full),
     .xfr_complete_i   (!data_busy),
     .crc_ok_i         (data_crc_ok),
-    .int_status_o     (data_int_status_reg_sd_clk),
-    .int_status_rst_i (data_int_rst_sd_clk)
+    .int_status_o     (data_int_status_reg),
+    .int_status_rst_i (data_int_rst)
     );
 
 sd_data_serial_host sd_data_serial_host0(
     .sd_clk         (sd_clk_o),
-    .rst            (wb_rst_i | software_reset_reg_sd_clk[0]),
+    .rst            (rst | software_reset_reg[0]),
     .data_in        (data_out_tx_fifo),
     .rd             (rd_fifo),
     .data_out       (data_in_rx_fifo),
@@ -284,19 +220,19 @@ sd_data_serial_host sd_data_serial_host0(
     .DAT_oe_o       (sd_dat_oe_o),
     .DAT_dat_o      (sd_dat_out_o),
     .DAT_dat_i      (sd_dat_dat_i),
-    .blksize        (block_size_reg_sd_clk),
-    .bus_4bit       (controll_setting_reg_sd_clk[0]),
-    .blkcnt         (block_count_reg_sd_clk),
+    .blksize        (block_size_reg),
+    .bus_4bit       (controll_setting_reg[0]),
+    .blkcnt         (block_count_reg),
     .start          ({d_read, d_write}),
-    .byte_alignment (dma_addr_reg_sd_clk),
+    .byte_alignment (dma_addr_reg),
     .sd_data_busy   (sd_data_busy),
     .busy           (data_busy),
     .crc_ok         (data_crc_ok)
     );
            
 sd_fifo_filler sd_fifo_filler0(
-    .wb_clk    (wb_clk_i),
-    .rst       (wb_rst_i | software_reset_reg_sd_clk[0]),
+    .wb_clk    (clk),
+    .rst       (rst | software_reset_reg[0]),
     .wbm_adr_o (wbm_adr),
     .wbm_we_o  (m_wb_we_o),
     .wbm_dat_o (m_wb_dat_o),
@@ -306,7 +242,7 @@ sd_fifo_filler sd_fifo_filler0(
     .wbm_ack_i (m_wb_ack_i),
     .en_rx_i   (start_rx_fifo),
     .en_tx_i   (start_tx_fifo),
-    .adr_i     (dma_addr_reg_wb_clk),
+    .adr_i     (dma_addr_reg),
     .sd_clk    (sd_clk_o),
     .dat_i     (data_in_rx_fifo),
     .dat_o     (data_out_tx_fifo),
@@ -318,12 +254,12 @@ sd_fifo_filler sd_fifo_filler0(
     .wb_full_o    (tx_fifo_full)
     );
 
-assign xfersize = (block_size_reg_wb_clk + 1'b1) * (block_count_reg_wb_clk + 1'b1);
+assign xfersize = (block_size_reg + 1'b1) * (block_count_reg + 1'b1);
 sd_wb_sel_ctrl sd_wb_sel_ctrl0(
-        .wb_clk         (wb_clk_i),
-        .rst            (wb_rst_i | software_reset_reg_sd_clk[0]),
+        .wb_clk         (clk),
+        .rst            (rst | software_reset_reg[0]),
         .ena            (start_rx_fifo),
-        .base_adr_i     (dma_addr_reg_wb_clk),
+        .base_adr_i     (dma_addr_reg),
         .wbm_adr_i      (wbm_adr),
         .xfersize       (xfersize),
         .wbm_sel_o      (wr_wbm_sel)
@@ -331,101 +267,48 @@ sd_wb_sel_ctrl sd_wb_sel_ctrl0(
 
 sd_data_xfer_trig sd_data_xfer_trig0 (
     .sd_clk                (sd_clk_o),
-    .rst                   (wb_rst_i | software_reset_reg_sd_clk[0]),
-    .cmd_with_data_start_i (cmd_start_sd_clk & 
-                            (command_reg_sd_clk[`CMD_WITH_DATA] != 
+    .rst                   (rst | software_reset_reg[0]),
+    .cmd_with_data_start_i (cmd_start & 
+                            (command_reg[`CMD_WITH_DATA] != 
                              2'b00)),
-    .r_w_i                 (command_reg_sd_clk[`CMD_WITH_DATA] == 
+    .r_w_i                 (command_reg[`CMD_WITH_DATA] == 
                             2'b01),
-    .cmd_int_status_i      (cmd_int_status_reg_sd_clk),
+    .cmd_int_status_i      (cmd_int_status_reg),
     .start_tx_o            (data_start_tx),
     .start_rx_o            (data_start_rx)
     );
 
 sd_controller_wb sd_controller_wb0(
-    .wb_clk_i                       (wb_clk_i),
-    .wb_rst_i                       (wb_rst_i),
-    .wb_dat_i                       (wb_dat_i),
-    .wb_dat_o                       (wb_dat_o),
-    .wb_adr_i                       (wb_adr_i),
-    .wb_sel_i                       (wb_sel_i),
-    .wb_we_i                        (wb_we_i),
-    .wb_stb_i                       (wb_stb_i),
-    .wb_cyc_i                       (wb_cyc_i),
-    .wb_ack_o                       (wb_ack_o),
+    .clk                            (clk),
+    .rst                            (rst),
     .cmd_start                      (cmd_start),
     .data_int_rst                   (data_int_rst),
     .cmd_int_rst                    (cmd_int_rst),
-    .argument_reg                   (argument_reg_wb_clk),
-    .command_reg                    (command_reg_wb_clk),
-    .response_0_reg                 (response_0_reg_wb_clk),
-    .response_1_reg                 (response_1_reg_wb_clk),
-    .response_2_reg                 (response_2_reg_wb_clk),
-    .response_3_reg                 (response_3_reg_wb_clk),
-    .software_reset_reg             (software_reset_reg_wb_clk),
-    .cmd_timeout_reg                (cmd_timeout_reg_wb_clk),
-    .data_timeout_reg               (data_timeout_reg_wb_clk),
-    .block_size_reg                 (block_size_reg_wb_clk),
-    .controll_setting_reg           (controll_setting_reg_wb_clk),
-    .cmd_int_status_reg             (cmd_int_status_reg_wb_clk),
-    .cmd_int_enable_reg             (cmd_int_enable_reg_wb_clk),
-    .clock_divider_reg              (clock_divider_reg_wb_clk),
-    .block_count_reg                (block_count_reg_wb_clk),
-    .dma_addr_reg                   (dma_addr_reg_wb_clk),
-    .data_int_status_reg            (data_int_status_reg_wb_clk),
-    .data_int_enable_reg            (data_int_enable_reg_wb_clk)
+    .argument_reg                   (argument_reg),
+    .command_reg                    (command_reg),
+    .response_0_reg                 (response_0_reg),
+    .response_1_reg                 (response_1_reg),
+    .response_2_reg                 (response_2_reg),
+    .response_3_reg                 (response_3_reg),
+    .software_reset_reg             (software_reset_reg),
+    .cmd_timeout_reg                (cmd_timeout_reg),
+    .data_timeout_reg               (data_timeout_reg),
+    .block_size_reg                 (block_size_reg),
+    .controll_setting_reg           (controll_setting_reg),
+    .cmd_int_status_reg             (cmd_int_status_reg),
+    .cmd_int_enable_reg             (cmd_int_enable_reg),
+    .clock_divider_reg              (clock_divider_reg),
+    .block_count_reg                (block_count_reg),
+    .dma_addr_reg                   (dma_addr_reg),
+    .data_int_status_reg            (data_int_status_reg),
+    .data_int_enable_reg            (data_int_enable_reg)
     );
 
-//clock domain crossing regiters
-//assign cmd_start_sd_clk = cmd_start_wb_clk;
-//assign data_int_rst_sd_clk = data_int_rst_wb_clk;
-//assign cmd_int_rst_sd_clk = cmd_int_rst_wb_clk;
-//assign argument_reg_sd_clk = argument_reg_wb_clk;
-//assign command_reg_sd_clk = command_reg_wb_clk;
-//assign response_0_reg_wb_clk = response_0_reg_sd_clk;
-//assign response_1_reg_wb_clk = response_1_reg_sd_clk;
-//assign response_2_reg_wb_clk = response_2_reg_sd_clk;
-//assign response_3_reg_wb_clk = response_3_reg_sd_clk;
-//assign software_reset_reg_sd_clk = software_reset_reg_wb_clk;
-//assign timeout_reg_sd_clk = timeout_reg_wb_clk;
-//assign block_size_reg_sd_clk = block_size_reg_wb_clk;
-//assign controll_setting_reg_sd_clk = controll_setting_reg_wb_clk;
-//assign cmd_int_status_reg_wb_clk = cmd_int_status_reg_sd_clk;
-//assign clock_divider_reg_sd_clk = clock_divider_reg_wb_clk;
-//assign block_count_reg_sd_clk = block_count_reg_wb_clk;
-//assign dma_addr_reg_sd_clk = dma_addr_reg_wb_clk;
-//assign data_int_status_reg_wb_clk = data_int_status_reg_sd_clk;
+sd_edge_detect cmd_start_edge(.rst(rst), .clk(clk), .sig(cmd_start), .rise(cmd_start), .fall());
+sd_edge_detect data_int_rst_edge(.rst(rst), .clk(clk), .sig(data_int_rst), .rise(data_int_rst), .fall());
+sd_edge_detect cmd_int_rst_edge(.rst(rst), .clk(clk), .sig(cmd_int_rst), .rise(cmd_int_rst), .fall());
 
-sd_edge_detect cmd_start_edge(.rst(wb_rst_i), .clk(wb_clk_i), .sig(cmd_start), .rise(cmd_start_wb_clk), .fall());
-sd_edge_detect data_int_rst_edge(.rst(wb_rst_i), .clk(wb_clk_i), .sig(data_int_rst), .rise(data_int_rst_wb_clk), .fall());
-sd_edge_detect cmd_int_rst_edge(.rst(wb_rst_i), .clk(wb_clk_i), .sig(cmd_int_rst), .rise(cmd_int_rst_wb_clk), .fall());
-monostable_domain_cross cmd_start_cross(wb_rst_i, wb_clk_i, cmd_start_wb_clk, sd_clk_o, cmd_start_sd_clk);
-monostable_domain_cross data_int_rst_cross(wb_rst_i, wb_clk_i, data_int_rst_wb_clk, sd_clk_o, data_int_rst_sd_clk);
-monostable_domain_cross cmd_int_rst_cross(wb_rst_i, wb_clk_i, cmd_int_rst_wb_clk, sd_clk_o, cmd_int_rst_sd_clk);
-bistable_domain_cross #(32) argument_reg_cross(wb_rst_i, wb_clk_i, argument_reg_wb_clk, sd_clk_o, argument_reg_sd_clk);
-bistable_domain_cross #(`CMD_REG_SIZE) command_reg_cross(wb_rst_i, wb_clk_i, command_reg_wb_clk, sd_clk_o, command_reg_sd_clk);
-bistable_domain_cross #(32) response_0_reg_cross(wb_rst_i, sd_clk_o, response_0_reg_sd_clk, wb_clk_i, response_0_reg_wb_clk);
-bistable_domain_cross #(32) response_1_reg_cross(wb_rst_i, sd_clk_o, response_1_reg_sd_clk, wb_clk_i, response_1_reg_wb_clk);
-bistable_domain_cross #(32) response_2_reg_cross(wb_rst_i, sd_clk_o, response_2_reg_sd_clk, wb_clk_i, response_2_reg_wb_clk);
-bistable_domain_cross #(32) response_3_reg_cross(wb_rst_i, sd_clk_o, response_3_reg_sd_clk, wb_clk_i, response_3_reg_wb_clk);
-bistable_domain_cross software_reset_reg_cross(wb_rst_i, wb_clk_i, software_reset_reg_wb_clk, sd_clk_o, software_reset_reg_sd_clk);
-bistable_domain_cross #(`CMD_TIMEOUT_W) cmd_timeout_reg_cross(wb_rst_i, wb_clk_i, cmd_timeout_reg_wb_clk, sd_clk_o, cmd_timeout_reg_sd_clk);
-bistable_domain_cross #(`DATA_TIMEOUT_W) data_timeout_reg_cross(wb_rst_i, wb_clk_i, data_timeout_reg_wb_clk, sd_clk_o, data_timeout_reg_sd_clk);
-bistable_domain_cross #(`BLKSIZE_W) block_size_reg_cross(wb_rst_i, wb_clk_i, block_size_reg_wb_clk, sd_clk_o, block_size_reg_sd_clk);
-bistable_domain_cross #(1) controll_setting_reg_cross(wb_rst_i, wb_clk_i, controll_setting_reg_wb_clk, sd_clk_o, controll_setting_reg_sd_clk);
-bistable_domain_cross #(`INT_CMD_SIZE) cmd_int_status_reg_cross(wb_rst_i, sd_clk_o, cmd_int_status_reg_sd_clk, wb_clk_i, cmd_int_status_reg_wb_clk);
-bistable_domain_cross #(8) clock_divider_reg_cross(wb_rst_i, wb_clk_i, clock_divider_reg_wb_clk, sd_clk_i_pad, clock_divider_reg_sd_clk);
-bistable_domain_cross #(`BLKCNT_W) block_count_reg_cross(wb_rst_i, wb_clk_i, block_count_reg_wb_clk, sd_clk_o, block_count_reg_sd_clk);
-bistable_domain_cross #(2) dma_addr_reg_cross(wb_rst_i, wb_clk_i, dma_addr_reg_wb_clk[1:0], sd_clk_o, dma_addr_reg_sd_clk);
-bistable_domain_cross #(`INT_DATA_SIZE) data_int_status_reg_cross(wb_rst_i, sd_clk_o, data_int_status_reg_sd_clk, wb_clk_i, data_int_status_reg_wb_clk);
-
-assign m_wb_cti_o = 3'b000;
-assign m_wb_bte_o = 2'b00;
-
-assign int_cmd =  |(cmd_int_status_reg_wb_clk & cmd_int_enable_reg_wb_clk);
-assign int_data =  |(data_int_status_reg_wb_clk & data_int_enable_reg_wb_clk);
-
-assign m_wb_sel_o = m_wb_cyc_o & m_wb_we_o ? wr_wbm_sel : 4'b1111;
-assign m_wb_adr_o = {wbm_adr[31:2], 2'b00};
+assign int_cmd =  |(clk & cmd_int_enable_reg);
+assign int_data =  |(clk & data_int_enable_reg);
 
 endmodule

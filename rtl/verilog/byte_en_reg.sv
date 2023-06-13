@@ -51,31 +51,38 @@ module byte_en_reg (
     clk,
     rst,
     we,
-    en,
-    d,
+    byte_sel,
+    d_byte,
+    q_byte,
     q
     );
 
-parameter DATA_W = 32;
-parameter INIT_VAL = {DATA_W{1'b0}};
+parameter DATA_W_BYTES = 4;
+parameter SEL_WIDTH = 2;
 
 input clk;
 input rst;
 input we;
-input [(DATA_W-1)/8:0] en;
-input [DATA_W-1:0] d;
-output reg [DATA_W-1:0] q;
 
-integer i;
+input [SEL_WIDTH - 1:0] byte_sel;
+input [7:0] d_byte;
+output [7:0] q_byte;
 
-always @(posedge clk or posedge rst)
+output reg [7:0] q [DATA_W_BYTES-1:0];
+
+assign q_byte = q[byte_sel];
+
+always @(posedge clk)
 begin
-    if (rst == 1)
-        q <= INIT_VAL;
-    else
-        for (i = 0; i < DATA_W; i = i + 1)
-            if (we && en[i/8])
-                q[i] <= d[i];
+    int i;
+
+    if (rst)
+        for (i = 0; i < DATA_W_BYTES; i = i + 1)
+            q[i] <= 8'h00;
+    else begin
+        if (we)
+            q[byte_sel] <= d_byte;
+    end
 end
 
 endmodule

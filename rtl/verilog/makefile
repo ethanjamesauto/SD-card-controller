@@ -1,5 +1,5 @@
 all:
-	iverilog -o verilog_tb.vpp *.v *.sv
+	iverilog -g2012 -o verilog_tb.vpp *.v *.sv
 	vvp verilog_tb.vpp > out.txt
 
 view: all
