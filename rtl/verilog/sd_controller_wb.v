@@ -50,8 +50,8 @@
 module sd_controller_wb(
            clk,
            rst,
+           sd_clk,
 
-           we,
            addr,
            data_in,
            data_out,
@@ -81,8 +81,8 @@ module sd_controller_wb(
 
 input wire clk;
 input wire rst;
+input wire sd_clk;
 
-input wire we;
 input wire [7:0] addr;
 input wire [7:0] data_in;
 output wire [7:0] data_out;
@@ -111,30 +111,32 @@ output reg cmd_int_rst;
 output [`BLKCNT_W-1:0]block_count_reg;
 output [31:0] dma_addr_reg;
 
-wire we;
-
 parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
 parameter capabilies_reg = 16'b0000_0000_0000_0000;
 
 /*
-assign we = (wb_we_i && ((wb_stb_i && wb_cyc_i) || wb_ack_o)) ? 1'b1 : 1'b0;
+//assign we = (wb_we_i && ((wb_stb_i && wb_cyc_i) || wb_ack_o)) ? 1'b1 : 1'b0;
+assign we = addr[7];
+wire reg_addr = addr[7:2];
+assign byte_sel = addr[1:0];
 
-byte_en_reg #(32) argument_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `argument, wb_sel_i, wb_dat_i, argument_reg);
-byte_en_reg #(`CMD_REG_SIZE) command_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `command, wb_sel_i[(`CMD_REG_SIZE-1)/8:0], wb_dat_i[`CMD_REG_SIZE-1:0], command_reg);
-byte_en_reg #(1) reset_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `reset, wb_sel_i[0], wb_dat_i[0], software_reset_reg);
-byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `cmd_timeout, wb_sel_i[(`CMD_TIMEOUT_W-1)/8:0], wb_dat_i[`CMD_TIMEOUT_W-1:0], cmd_timeout_reg);
-byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `data_timeout, wb_sel_i[(`DATA_TIMEOUT_W-1)/8:0], wb_dat_i[`DATA_TIMEOUT_W-1:0], data_timeout_reg);
-byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `blksize, wb_sel_i[(`BLKSIZE_W-1)/8:0], wb_dat_i[`BLKSIZE_W-1:0], block_size_reg);
-byte_en_reg #(1) controll_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `controller, wb_sel_i[0], wb_dat_i[0], controll_setting_reg);
-byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `cmd_iser, wb_sel_i[(`INT_CMD_SIZE-1)/8:0], wb_dat_i[`INT_CMD_SIZE-1:0], cmd_int_enable_reg);
-byte_en_reg #(8) clock_d_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `clock_d, wb_sel_i[0], wb_dat_i[7:0], clock_divider_reg);
-byte_en_reg #(`INT_DATA_SIZE) data_int_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `data_iser, wb_sel_i[(`INT_DATA_SIZE-1)/8:0], wb_dat_i[`INT_DATA_SIZE-1:0], data_int_enable_reg);
-byte_en_reg #(`BLKCNT_W) block_count_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `blkcnt, wb_sel_i[(`BLKCNT_W-1)/8:0], wb_dat_i[`BLKCNT_W-1:0], block_count_reg);
-byte_en_reg #(32) dma_addr_r(wb_clk_i, wb_rst_i, we && wb_adr_i == `dst_src_addr, wb_sel_i[3:0], wb_dat_i, dma_addr_reg);
 
-always @(posedge wb_clk_i or posedge wb_rst_i)
+byte_en_reg #(32) argument_r(sd_clk, rst, we && reg_addr == `argument, wb_sel_i, wb_dat_i, argument_reg);
+byte_en_reg #(`CMD_REG_SIZE) command_r(sd_clk, rst, we && reg_addr == `command, wb_sel_i[(`CMD_REG_SIZE-1)/8:0], wb_dat_i[`CMD_REG_SIZE-1:0], command_reg);
+byte_en_reg #(1) reset_r(sd_clk, rst, we && reg_addr == `reset, wb_sel_i[0], wb_dat_i[0], software_reset_reg);
+byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(sd_clk, rst, we && reg_addr == `cmd_timeout, wb_sel_i[(`CMD_TIMEOUT_W-1)/8:0], wb_dat_i[`CMD_TIMEOUT_W-1:0], cmd_timeout_reg);
+byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(sd_clk, rst, we && reg_addr == `data_timeout, wb_sel_i[(`DATA_TIMEOUT_W-1)/8:0], wb_dat_i[`DATA_TIMEOUT_W-1:0], data_timeout_reg);
+byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(sd_clk, rst, we && reg_addr == `blksize, wb_sel_i[(`BLKSIZE_W-1)/8:0], wb_dat_i[`BLKSIZE_W-1:0], block_size_reg);
+byte_en_reg #(1) controll_r(sd_clk, rst, we && reg_addr == `controller, wb_sel_i[0], wb_dat_i[0], controll_setting_reg);
+byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(sd_clk, rst, we && reg_addr == `cmd_iser, wb_sel_i[(`INT_CMD_SIZE-1)/8:0], wb_dat_i[`INT_CMD_SIZE-1:0], cmd_int_enable_reg);
+byte_en_reg #(8) clock_d_r(sd_clk, rst, we && reg_addr == `clock_d, wb_sel_i[0], wb_dat_i[7:0], clock_divider_reg);
+byte_en_reg #(`INT_DATA_SIZE) data_int_r(sd_clk, rst, we && reg_addr == `data_iser, wb_sel_i[(`INT_DATA_SIZE-1)/8:0], wb_dat_i[`INT_DATA_SIZE-1:0], data_int_enable_reg);
+byte_en_reg #(`BLKCNT_W) block_count_r(sd_clk, rst, we && reg_addr == `blkcnt, wb_sel_i[(`BLKCNT_W-1)/8:0], wb_dat_i[`BLKCNT_W-1:0], block_count_reg);
+byte_en_reg #(32) dma_addr_r(sd_clk, rst, we && reg_addr == `dst_src_addr, wb_sel_i[3:0], wb_dat_i, dma_addr_reg);
+
+always @(posedge clk)
 begin
-    if (wb_rst_i)begin
+    if (rst)begin
         wb_ack_o <= 0;
         cmd_start <= 0;
         data_int_rst <= 0;

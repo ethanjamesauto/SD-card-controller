@@ -15,7 +15,7 @@ initial begin
     #2 rst = 0;
     #2 we = 1'b1;
     #2 we = 1'b0;
-    #10 byte_sel = 2'd1;
+    #10 byte_sel = 2'd3;
     #2 we = 1'b1;
     #2 we = 1'b0;
 end
@@ -30,7 +30,7 @@ byte_en_reg reg0(
     .rst(rst),
     .we(we),
     .byte_sel(byte_sel),
-    .d_byte(8'h32)
+    .byte_in(8'b10101011)
     //.q_byte,
     //.q
 );
