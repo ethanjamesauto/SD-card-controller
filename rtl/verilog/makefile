@@ -1,6 +1,0 @@
-all:
-	iverilog -g2012 -o verilog_tb.vpp *.v *.sv
-	vvp verilog_tb.vpp > out.txt
-
-view: all
-	gtkwave verilog_tb.vcd

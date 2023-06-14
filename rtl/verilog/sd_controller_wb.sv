@@ -131,33 +131,32 @@ byte_en_reg #(8) clock_d_r(sd_clk, rst, we && reg_addr == `clock_d, byte_sel, da
 byte_en_reg #(`INT_DATA_SIZE) data_int_r(sd_clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_int_enable_reg);
 byte_en_reg #(`BLKCNT_W) block_count_r(sd_clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
 byte_en_reg #(32) dma_addr_r(sd_clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, dma_addr_reg);
-/*
+//*
 always @(posedge clk)
 begin
     if (rst)begin
-        wb_ack_o <= 0;
+        //wb_ack_o <= 0;
         cmd_start <= 0;
         data_int_rst <= 0;
         cmd_int_rst <= 0;
-    end
-    else
-    begin
+    end else begin
         cmd_start <= 0;
         data_int_rst <= 0;
         cmd_int_rst <= 0;
-        if ((wb_stb_i & wb_cyc_i) || wb_ack_o)begin
-            if (wb_we_i) begin
-                case (wb_adr_i)
-                    `argument: cmd_start <= 1;//only msb triggers xfer
-                    `cmd_isr: cmd_int_rst <= 1;
-                    `data_isr: data_int_rst <= 1;
-                endcase
-            end
-            wb_ack_o <= wb_cyc_i & wb_stb_i & ~wb_ack_o;
+        //if ((wb_stb_i & wb_cyc_i) || wb_ack_o)begin
+        if (we) begin
+            case (reg_addr)
+                `argument: cmd_start <= 1;//only msb triggers xfer
+                `cmd_isr: cmd_int_rst <= 1;
+                `data_isr: data_int_rst <= 1;
+            endcase
         end
+        //wb_ack_o <= wb_cyc_i & wb_stb_i & ~wb_ack_o;
+        //end
     end
-end*/
+end//*/
 
+// TODO: Some of these registers don't need to be read from. They should be removed from the case statement to save LUTs.
 logic [31:0] wb_dat_o;
 always_comb begin
 	wb_dat_o = 32'd0;

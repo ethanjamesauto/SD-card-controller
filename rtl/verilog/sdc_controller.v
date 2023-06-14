@@ -323,9 +323,9 @@ sd_controller_wb sd_controller_wb0(
     .data_int_enable_reg            (data_int_enable_reg)
     );
 
-sd_edge_detect cmd_start_edge(.rst(rst), .clk(clk), .sig(cmd_start), .rise(cmd_start), .fall());
-sd_edge_detect data_int_rst_edge(.rst(rst), .clk(clk), .sig(data_int_rst), .rise(data_int_rst), .fall());
-sd_edge_detect cmd_int_rst_edge(.rst(rst), .clk(clk), .sig(cmd_int_rst), .rise(cmd_int_rst), .fall());
+//sd_edge_detect cmd_start_edge(.rst(rst), .clk(clk), .sig(cmd_start), .rise(cmd_start), .fall());
+//sd_edge_detect data_int_rst_edge(.rst(rst), .clk(clk), .sig(data_int_rst), .rise(data_int_rst), .fall());
+//sd_edge_detect cmd_int_rst_edge(.rst(rst), .clk(clk), .sig(cmd_int_rst), .rise(cmd_int_rst), .fall());
 
 //assign int_cmd =  |(clk & cmd_int_enable_reg);
 //assign int_data =  |(clk & data_int_enable_reg);
