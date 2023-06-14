@@ -160,6 +160,7 @@ end*/
 
 logic [31:0] wb_dat_o;
 always_comb begin
+	wb_dat_o = 32'd0;
     case (reg_addr)
         `argument: wb_dat_o = argument_reg;
         `command: wb_dat_o[`CMD_REG_SIZE-1:0] = command_reg;
@@ -181,7 +182,6 @@ always_comb begin
         `blkcnt: wb_dat_o[`BLKCNT_W-1:0] = block_count_reg;
         `data_iser: wb_dat_o[`INT_DATA_SIZE-1:0] = data_int_enable_reg;
         `dst_src_addr: wb_dat_o = dma_addr_reg;
-        default: wb_dat_o = 32'd0;
     endcase
     case (byte_sel)
         2'b00: data_out = wb_dat_o[7:0];
