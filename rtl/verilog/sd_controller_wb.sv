@@ -90,6 +90,7 @@ input wire [7:0] data_in;
 output logic [7:0] data_out;
 
 output reg cmd_start;
+
 //Buss accessible registers
 output [31:0] argument_reg;
 output [`CMD_REG_SIZE-1:0] command_reg;
@@ -119,34 +120,50 @@ parameter capabilies_reg = 16'b0000_0000_0000_0000;
 wire [6:0] reg_addr = {addr[6:2], 2'b00};
 wire [1:0] byte_sel = addr[1:0];
 
-byte_en_reg #(32) argument_r(sd_clk, rst, we && reg_addr == `argument, byte_sel, data_in, argument_reg);
-byte_en_reg #(`CMD_REG_SIZE) command_r(sd_clk, rst, we && reg_addr == `command, byte_sel, data_in, command_reg);
-byte_en_reg #(1) reset_r(sd_clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg);
-byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(sd_clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
-byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(sd_clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
-byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(sd_clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
-byte_en_reg #(1) controll_r(sd_clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
-byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(sd_clk, rst, we && reg_addr == `cmd_iser, byte_sel, data_in, cmd_int_enable_reg);
-byte_en_reg #(8) clock_d_r(sd_clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
-byte_en_reg #(`INT_DATA_SIZE) data_int_r(sd_clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_int_enable_reg);
-byte_en_reg #(`BLKCNT_W) block_count_r(sd_clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
-byte_en_reg #(32) dma_addr_r(sd_clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, dma_addr_reg);
+byte_en_reg #(32) argument_r(clk, rst, we && reg_addr == `argument, byte_sel, data_in, argument_reg);
+byte_en_reg #(`CMD_REG_SIZE) command_r(clk, rst, we && reg_addr == `command, byte_sel, data_in, command_reg);
+byte_en_reg #(1) reset_r(clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg);
+byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
+byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
+byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
+byte_en_reg #(1) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
+byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(clk, rst, we && reg_addr == `cmd_iser, byte_sel, data_in, cmd_int_enable_reg);
+byte_en_reg #(8, 1) clock_d_r(clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
+byte_en_reg #(`INT_DATA_SIZE) data_int_r(clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_int_enable_reg);
+byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
+byte_en_reg #(32) dma_addr_r(clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, dma_addr_reg);
 //*
+
+// These registers take the cmd_start signal from the system clock speed domain 
+// and transfers it to the SD card clock speed domain.
+// This assumes that a clock divider is used to generate the SD card clock - 
+// no proper clock domain crossing is done.
+// TODO: make sure this actually works
+reg cmd_start_busclk;
+reg prev_clk;
+
 always @(posedge clk)
 begin
     if (rst)begin
         //wb_ack_o <= 0;
         cmd_start <= 0;
+        cmd_start_busclk <= 0;
         data_int_rst <= 0;
         cmd_int_rst <= 0;
+        prev_clk <= 0;
     end else begin
-        cmd_start <= 0;
+        if (sd_clk != prev_clk && sd_clk == 1'b1) begin
+            cmd_start <= cmd_start_busclk;
+            cmd_start_busclk <= 0;
+        end
+        prev_clk <= sd_clk;
+
         data_int_rst <= 0;
         cmd_int_rst <= 0;
         //if ((wb_stb_i & wb_cyc_i) || wb_ack_o)begin
-        if (we) begin
+        if (we && byte_sel == 2'b00) begin
             case (reg_addr)
-                `argument: cmd_start <= 1;//only msb triggers xfer
+                `argument: cmd_start_busclk <= 1;//only msb triggers xfer
                 `cmd_isr: cmd_int_rst <= 1;
                 `data_isr: data_int_rst <= 1;
             endcase
@@ -155,6 +172,8 @@ begin
         //end
     end
 end//*/
+
+
 
 // TODO: Some of these registers don't need to be read from. They should be removed from the case statement to save LUTs.
 logic [31:0] wb_dat_o;
