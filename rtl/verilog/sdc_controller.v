@@ -66,9 +66,7 @@ module sdc_controller(
            data_out,
 
            //SD BUS
-           sd_cmd_dat_i, 
-           sd_cmd_out_o, 
-           sd_cmd_oe_o, 
+           sd_cmd, 
            //card_detect,
            sd_dat_dat_i, 
            sd_dat_out_o, 
@@ -90,9 +88,14 @@ output wire [7:0] data_out;
 input wire [3:0] sd_dat_dat_i;
 output wire [3:0] sd_dat_out_o;
 output wire sd_dat_oe_o;
-input wire sd_cmd_dat_i;
-output wire sd_cmd_out_o;
-output wire sd_cmd_oe_o;
+
+inout wire sd_cmd;
+wire sd_cmd_dat_i;
+wire sd_cmd_out_o;
+wire sd_cmd_oe_o;
+assign sd_cmd = sd_cmd_oe_o ? sd_cmd_out_o : 1'bz;
+assign sd_cmd_dat_i = sd_cmd;
+
 output sd_clk_o_pad;
 output int_cmd, int_data;
 
