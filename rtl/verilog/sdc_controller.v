@@ -115,8 +115,8 @@ wire cmd_finish;
 
 wire d_write;
 wire d_read;
-wire [31:0] data_in_rx_fifo;
-wire [31:0] data_out_tx_fifo;
+wire [7:0] data_in_rx_fifo;
+wire [7:0] data_out_tx_fifo;
 wire start_tx_fifo;
 wire start_rx_fifo;
 wire tx_fifo_empty;
@@ -240,17 +240,11 @@ sd_data_serial_host sd_data_serial_host0(
     .busy           (data_busy),
     .crc_ok         (data_crc_ok)
     );
-/*
+
 sd_fifo_filler sd_fifo_filler0(
     .wb_clk    (clk),
     .rst       (rst | software_reset_reg[0]),
-    .wbm_adr_o (wbm_adr),
-    .wbm_we_o  (m_wb_we_o),
-    .wbm_dat_o (m_wb_dat_o),
-    .wbm_dat_i (m_wb_dat_i),
-    .wbm_cyc_o (m_wb_cyc_o),
-    .wbm_stb_o (m_wb_stb_o),
-    .wbm_ack_i (m_wb_ack_i),
+
     .en_rx_i   (start_rx_fifo),
     .en_tx_i   (start_tx_fifo),
     .adr_i     (dma_addr_reg),
@@ -263,9 +257,9 @@ sd_fifo_filler sd_fifo_filler0(
     .sd_full_o   (rx_fifo_full),
     .wb_empty_o   (),
     .wb_full_o    (tx_fifo_full)
-    );*/
+    );
 
-/*
+
 assign xfersize = (block_size_reg + 1'b1) * (block_count_reg + 1'b1);
 sd_wb_sel_ctrl sd_wb_sel_ctrl0(
         .wb_clk         (clk),
@@ -275,7 +269,7 @@ sd_wb_sel_ctrl sd_wb_sel_ctrl0(
         .wbm_adr_i      (wbm_adr),
         .xfersize       (xfersize),
         .wbm_sel_o      (wr_wbm_sel)
-        );*/
+        );
 
 sd_data_xfer_trig sd_data_xfer_trig0 (
     .sd_clk                (sd_clk_o),
@@ -327,7 +321,7 @@ sd_controller_wb sd_controller_wb0(
 //sd_edge_detect data_int_rst_edge(.rst(rst), .clk(clk), .sig(data_int_rst), .rise(data_int_rst), .fall());
 //sd_edge_detect cmd_int_rst_edge(.rst(rst), .clk(clk), .sig(cmd_int_rst), .rise(cmd_int_rst), .fall());
 
-//assign int_cmd =  |(clk & cmd_int_enable_reg);
-//assign int_data =  |(clk & data_int_enable_reg);
+assign int_cmd =  |(clk & cmd_int_enable_reg);
+assign int_data =  |(clk & data_int_enable_reg);
 
 endmodule

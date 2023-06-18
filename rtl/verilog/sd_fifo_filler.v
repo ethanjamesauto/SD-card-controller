@@ -50,22 +50,14 @@
 module sd_fifo_filler(
            input wb_clk,
            input rst,
-           //WB Signals
-           output reg [31:0] wbm_adr_o,
-           output wbm_we_o,
-           output [31:0] wbm_dat_o,
-           input [31:0] wbm_dat_i,
-           output wbm_cyc_o,
-           output wbm_stb_o,
-           input wbm_ack_i,
            //Data Master Control signals
            input en_rx_i,
            input en_tx_i,
            input [31:0] adr_i,
            //Data Serial signals
            input sd_clk,
-           input [31:0] dat_i,
-           output [31:0] dat_o,
+           input [7:0] dat_i,
+           output [7:0] dat_o,
            input wr_i,
            input rd_i,
            output sd_full_o,
@@ -74,7 +66,7 @@ module sd_fifo_filler(
            output wb_empty_o
        );
 
-`define FIFO_MEM_ADR_SIZE 4
+`define FIFO_MEM_ADR_SIZE 10
 `define MEM_OFFSET 4
 
 wire reset_fifo;
@@ -82,15 +74,15 @@ wire fifo_rd;
 reg fifo_rd_ack;
 reg fifo_rd_reg;
 
-assign fifo_rd = wbm_cyc_o & wbm_ack_i;
+//assign fifo_rd = wbm_cyc_o & wbm_ack_i;
 assign reset_fifo = !en_rx_i & !en_tx_i;
 
-assign wbm_we_o = en_rx_i & !wb_empty_o;
-assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
-assign wbm_stb_o = en_rx_i ? wbm_cyc_o & fifo_rd_ack : wbm_cyc_o;
+//assign wbm_we_o = en_rx_i & !wb_empty_o;
+//assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
+//assign wbm_stb_o = en_rx_i ? wbm_cyc_o & fifo_rd_ack : wbm_cyc_o;
 
 generic_fifo_dc_gray #(
-    .dw(32), 
+    .dw(8), 
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray0 (
     .rd_clk(wb_clk),
@@ -100,7 +92,7 @@ generic_fifo_dc_gray #(
     .din(dat_i), 
     .we(wr_i),
     .dout(wbm_dat_o), 
-    .re(en_rx_i & wbm_cyc_o & wbm_ack_i), 
+    .re(1'b0),//en_rx_i & wbm_cyc_o & wbm_ack_i), 
     .full(sd_full_o), 
     .empty(wb_empty_o), 
     .wr_level(), 
@@ -108,7 +100,7 @@ generic_fifo_dc_gray #(
     );
     
 generic_fifo_dc_gray #(
-    .dw(32), 
+    .dw(8), 
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray1 (
     .rd_clk(sd_clk),
@@ -116,7 +108,7 @@ generic_fifo_dc_gray #(
     .rst(!(rst | reset_fifo)), 
     .clr(1'b0), 
     .din(wbm_dat_i), 
-    .we(en_tx_i & wbm_cyc_o & wbm_stb_o & wbm_ack_i),
+    .we(1'b0),//en_tx_i & wbm_cyc_o & wbm_stb_o & wbm_ack_i),
     .dout(dat_o), 
     .re(rd_i), 
     .full(wb_full_o), 
@@ -125,6 +117,7 @@ generic_fifo_dc_gray #(
     .rd_level() 
     );
 
+/*
 always @(posedge wb_clk or posedge rst)
     if (rst) begin
         wbm_adr_o <= 0;
@@ -139,7 +132,7 @@ always @(posedge wb_clk or posedge rst)
         else if (reset_fifo)
             wbm_adr_o <= adr_i;
     end
-
+*/
 endmodule
 
 
