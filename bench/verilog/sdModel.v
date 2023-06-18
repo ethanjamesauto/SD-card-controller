@@ -62,16 +62,16 @@ module sdModel
 #(parameter ramdisk="",
   parameter log_file="") (
   input sdClk,
-  tri cmd,
-  tri [3:0] dat
+  input cmd,
+  output reg cmdOut,
+  input [3:0] dat,
+  output reg [3:0] datOut
   
 );
 
 
 reg oeCmd;
 reg oeDat;
-reg cmdOut;
-reg [3:0] datOut;
 reg [10:0] transf_cnt;
 
     
@@ -81,8 +81,8 @@ reg cardIdentificationState;
 reg CardTransferActive;
 reg [2:0] BusWidth;
 
-assign cmd = oeCmd ? cmdOut : 1'bz;
-assign dat = oeDat ? datOut : 4'bz;
+//assign cmd = oeCmd ? cmdOut : 1'bz;
+//assign dat = oeDat ? datOut : 4'bz;
 
 reg InbuffStatus;
 reg [31:0] BlockAddr;

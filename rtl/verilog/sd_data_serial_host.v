@@ -258,18 +258,18 @@ begin: FSM_OUT
                     DAT_oe_o<=1;
                     if (bus_4bit_reg) begin
                         last_din <= {
-                            data_in[7-(data_index[2:0]<<2)], 
-                            data_in[6-(data_index[2:0]<<2)], 
-                            data_in[5-(data_index[2:0]<<2)], 
-                            data_in[4-(data_index[2:0]<<2)]
+                            data_in[7-(data_index[0]<<2)], 
+                            data_in[6-(data_index[0]<<2)], 
+                            data_in[5-(data_index[0]<<2)], 
+                            data_in[4-(data_index[0]<<2)]
                             };
                         crc_in <= {
-                            data_in[7-(data_index[2:0]<<2)], 
-                            data_in[6-(data_index[2:0]<<2)], 
-                            data_in[5-(data_index[2:0]<<2)], 
-                            data_in[4-(data_index[2:0]<<2)]
+                            data_in[7-(data_index[0]<<2)], 
+                            data_in[6-(data_index[0]<<2)], 
+                            data_in[5-(data_index[0]<<2)], 
+                            data_in[4-(data_index[0]<<2)]
                             };
-                        if (data_index[2:0] == 3'h7/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
+                        if (data_index[0] == 3'h1/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
                             rd <= 1;
                         end
                     end
@@ -339,11 +339,11 @@ begin: FSM_OUT
             READ_DAT: begin
                 if (transf_cnt < data_cycles) begin
                     if (bus_4bit_reg) begin
-                        we <= (data_index[2:0] == 7 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
-                        data_out[7-(data_index[2:0]<<2)] <= DAT_dat_reg[3];
-                        data_out[6-(data_index[2:0]<<2)] <= DAT_dat_reg[2];
-                        data_out[5-(data_index[2:0]<<2)] <= DAT_dat_reg[1];
-                        data_out[4-(data_index[2:0]<<2)] <= DAT_dat_reg[0];
+                        we <= (data_index[0] == 1 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
+                        data_out[7-(data_index[0]<<2)] <= DAT_dat_reg[3];
+                        data_out[6-(data_index[0]<<2)] <= DAT_dat_reg[2];
+                        data_out[5-(data_index[0]<<2)] <= DAT_dat_reg[1];
+                        data_out[4-(data_index[0]<<2)] <= DAT_dat_reg[0];
                     end
                     else begin
                         we <= (data_index == 7 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
