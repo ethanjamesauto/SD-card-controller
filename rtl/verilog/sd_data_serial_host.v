@@ -234,21 +234,21 @@ begin: FSM_OUT
                     crc_en <= 1;
                     if (bus_4bit_reg) begin
                         last_din <= {
-                            data_in[31-(byte_alignment_reg << 3)], 
-                            data_in[30-(byte_alignment_reg << 3)], 
-                            data_in[29-(byte_alignment_reg << 3)], 
-                            data_in[28-(byte_alignment_reg << 3)]
+                            data_in[7-(byte_alignment_reg << 3)], 
+                            data_in[6-(byte_alignment_reg << 3)], 
+                            data_in[5-(byte_alignment_reg << 3)], 
+                            data_in[4-(byte_alignment_reg << 3)]
                             };
                         crc_in <= {
-                            data_in[31-(byte_alignment_reg << 3)], 
-                            data_in[30-(byte_alignment_reg << 3)], 
-                            data_in[29-(byte_alignment_reg << 3)], 
-                            data_in[28-(byte_alignment_reg << 3)]
+                            data_in[7-(byte_alignment_reg << 3)], 
+                            data_in[6-(byte_alignment_reg << 3)], 
+                            data_in[5-(byte_alignment_reg << 3)], 
+                            data_in[4-(byte_alignment_reg << 3)]
                             };
                     end
                     else begin
-                        last_din <= {3'h7, data_in[31-(byte_alignment_reg << 3)]};
-                        crc_in <= {3'h7, data_in[31-(byte_alignment_reg << 3)]};
+                        last_din <= {3'h7, data_in[7-(byte_alignment_reg << 3)]};
+                        crc_in <= {3'h7, data_in[7-(byte_alignment_reg << 3)]};
                     end
                     DAT_oe_o <= 1;
                     DAT_dat_o <= bus_4bit_reg ? 4'h0 : 4'he;
