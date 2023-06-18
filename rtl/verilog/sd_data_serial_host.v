@@ -52,10 +52,10 @@ module sd_data_serial_host(
            input sd_clk,
            input rst,
            //Tx Fifo
-           input [31:0] data_in,
+           input [7:0] data_in,
            output reg rd,
            //Rx Fifo
-           output reg [31:0] data_out,
+           output reg [7:0] data_out,
            output reg we,
            //tristate data
            output reg DAT_oe_o,
@@ -100,8 +100,9 @@ wire start_bit;
 reg [4:0] crc_c;
 reg [3:0] last_din;
 reg [2:0] crc_s ;
-reg [4:0] data_index;
+reg [2:0] data_index;
 
+//TODO: this doesn't need to be a reg, right?
 //sd data input pad register
 always @(posedge sd_clk)
     DAT_dat_reg <= DAT_dat_i;
@@ -257,29 +258,29 @@ begin: FSM_OUT
                     DAT_oe_o<=1;
                     if (bus_4bit_reg) begin
                         last_din <= {
-                            data_in[31-(data_index[2:0]<<2)], 
-                            data_in[30-(data_index[2:0]<<2)], 
-                            data_in[29-(data_index[2:0]<<2)], 
-                            data_in[28-(data_index[2:0]<<2)]
+                            data_in[7-(data_index[2:0]<<2)], 
+                            data_in[6-(data_index[2:0]<<2)], 
+                            data_in[5-(data_index[2:0]<<2)], 
+                            data_in[4-(data_index[2:0]<<2)]
                             };
                         crc_in <= {
-                            data_in[31-(data_index[2:0]<<2)], 
-                            data_in[30-(data_index[2:0]<<2)], 
-                            data_in[29-(data_index[2:0]<<2)], 
-                            data_in[28-(data_index[2:0]<<2)]
+                            data_in[7-(data_index[2:0]<<2)], 
+                            data_in[6-(data_index[2:0]<<2)], 
+                            data_in[5-(data_index[2:0]<<2)], 
+                            data_in[4-(data_index[2:0]<<2)]
                             };
-                        if (data_index[2:0] == 3'h5/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
+                        if (data_index[2:0] == 3'h7/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
                             rd <= 1;
                         end
                     end
                     else begin
-                        last_din <= {3'h7, data_in[31-data_index]};
-                        crc_in <= {3'h7, data_in[31-data_index]};
-                        if (data_index == 29/*not 31 - read delay !!!*/) begin
+                        last_din <= {3'h7, data_in[7-data_index]};
+                        crc_in <= {3'h7, data_in[7-data_index]};
+                        if (data_index == (7)/*not 7 - read delay !!!*/) begin
                             rd <= 1;
                         end
                     end
-                    data_index <= data_index + 5'h1;
+                    data_index <= data_index + 3'h1;
                     DAT_dat_o <= last_din;
                     if (transf_cnt == data_cycles+1)
                         crc_en<=0;
@@ -339,16 +340,16 @@ begin: FSM_OUT
                 if (transf_cnt < data_cycles) begin
                     if (bus_4bit_reg) begin
                         we <= (data_index[2:0] == 7 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
-                        data_out[31-(data_index[2:0]<<2)] <= DAT_dat_reg[3];
-                        data_out[30-(data_index[2:0]<<2)] <= DAT_dat_reg[2];
-                        data_out[29-(data_index[2:0]<<2)] <= DAT_dat_reg[1];
-                        data_out[28-(data_index[2:0]<<2)] <= DAT_dat_reg[0];
+                        data_out[7-(data_index[2:0]<<2)] <= DAT_dat_reg[3];
+                        data_out[6-(data_index[2:0]<<2)] <= DAT_dat_reg[2];
+                        data_out[5-(data_index[2:0]<<2)] <= DAT_dat_reg[1];
+                        data_out[4-(data_index[2:0]<<2)] <= DAT_dat_reg[0];
                     end
                     else begin
-                        we <= (data_index == 31 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
-                        data_out[31-data_index] <= DAT_dat_reg[0];
+                        we <= (data_index == 7 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
+                        data_out[7-data_index] <= DAT_dat_reg[0];
                     end
-                    data_index <= data_index + 5'h1;
+                    data_index <= data_index + 3'h1;
                     crc_in <= DAT_dat_reg;
                     crc_ok <= 1;
                     transf_cnt <= transf_cnt + 16'h1;
