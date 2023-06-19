@@ -126,7 +126,7 @@ byte_en_reg #(1) reset_r(clk, rst, we && reg_addr == `reset, byte_sel, data_in, 
 byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
 byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
 byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
-byte_en_reg #(1) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
+byte_en_reg #(1, 0) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
 byte_en_reg #(`INT_CMD_SIZE) cmd_int_r(clk, rst, we && reg_addr == `cmd_iser, byte_sel, data_in, cmd_int_enable_reg);
 byte_en_reg #(8, 1) clock_d_r(clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
 byte_en_reg #(`INT_DATA_SIZE) data_int_r(clk, rst, we && reg_addr == `data_iser, byte_sel, data_in, data_int_enable_reg);
@@ -134,42 +134,33 @@ byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte
 byte_en_reg #(32) dma_addr_r(clk, rst, we && reg_addr == `dst_src_addr, byte_sel, data_in, dma_addr_reg);
 //*
 
-// These registers take the cmd_start signal from the system clock speed domain 
+// These registers take the cmd_start signal (and other signals) from the system clock speed domain 
 // and transfers it to the SD card clock speed domain.
 // This assumes that a clock divider is used to generate the SD card clock - 
 // no proper clock domain crossing is done.
-// TODO: make sure this actually works
-reg cmd_start_busclk;
 reg prev_clk;
-
 always @(posedge clk)
 begin
     if (rst)begin
-        //wb_ack_o <= 0;
         cmd_start <= 0;
-        cmd_start_busclk <= 0;
         data_int_rst <= 0;
         cmd_int_rst <= 0;
         prev_clk <= 0;
     end else begin
-        if (sd_clk != prev_clk && sd_clk == 1'b1) begin
-            cmd_start <= cmd_start_busclk;
-            cmd_start_busclk <= 0;
-        end
         prev_clk <= sd_clk;
 
-        data_int_rst <= 0;
-        cmd_int_rst <= 0;
-        //if ((wb_stb_i & wb_cyc_i) || wb_ack_o)begin
+        if (prev_clk == 0 && sd_clk == 1)begin
+            cmd_start <= 0;
+            if (data_int_rst) data_int_rst <= 0;
+            cmd_int_rst <= 0;
+        end 
         if (we && byte_sel == 2'b00) begin
             case (reg_addr)
-                `argument: cmd_start_busclk <= 1;//only msb triggers xfer
+                `argument: cmd_start <= 1;
                 `cmd_isr: cmd_int_rst <= 1;
                 `data_isr: data_int_rst <= 1;
             endcase
         end
-        //wb_ack_o <= wb_cyc_i & wb_stb_i & ~wb_ack_o;
-        //end
     end
 end//*/
 
