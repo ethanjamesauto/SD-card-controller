@@ -69,7 +69,9 @@ module sd_data_serial_host(
            input [1:0] byte_alignment,
            output sd_data_busy,
            output busy,
-           output reg crc_ok
+           output reg crc_ok,
+
+           output reg [7:0] debug_out
        );
 
 reg [3:0] DAT_dat_reg;
@@ -117,6 +119,13 @@ endgenerate
 assign busy = (state != IDLE);
 assign start_bit = !DAT_dat_reg[0];
 assign sd_data_busy = !DAT_dat_reg[0];
+
+always @(posedge sd_clk or posedge rst) begin
+    if (rst)
+        debug_out <= 0;
+    else if (we)
+        debug_out <= data_out;
+end
 
 always @(state or start or start_bit or  transf_cnt or data_cycles or crc_status or crc_ok or busy_int or next_block)
 begin: FSM_COMBO
