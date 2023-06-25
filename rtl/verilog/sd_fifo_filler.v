@@ -48,12 +48,12 @@
 //////////////////////////////////////////////////////////////////////
 
 module sd_fifo_filler(
-           input wb_clk,
+           input clk,
            input rst,
-           //Data Master Control signals
-           input en_rx_i,
-           input en_tx_i,
-           input [31:0] adr_i,
+
+           output [7:0] rd_dat_o,
+           input rd_en_i,
+
            //Data Serial signals
            input sd_clk,
            input [7:0] dat_i,
@@ -69,13 +69,13 @@ module sd_fifo_filler(
 `define FIFO_MEM_ADR_SIZE 10
 `define MEM_OFFSET 4
 
-wire reset_fifo;
+wire reset_fifo = 1'b0;
 wire fifo_rd;
 reg fifo_rd_ack;
 reg fifo_rd_reg;
 
 //assign fifo_rd = wbm_cyc_o & wbm_ack_i;
-assign reset_fifo = !en_rx_i & !en_tx_i;
+//assign reset_fifo = !en_rx_i & !en_tx_i;
 
 //assign wbm_we_o = en_rx_i & !wb_empty_o;
 //assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
@@ -85,14 +85,14 @@ generic_fifo_dc_gray #(
     .dw(8), 
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray0 (
-    .rd_clk(wb_clk),
+    .rd_clk(clk),
     .wr_clk(sd_clk), 
     .rst(!(rst | reset_fifo)), 
     .clr(1'b0), 
     .din(dat_i), 
     .we(wr_i),
-    .dout(wbm_dat_o), 
-    .re(1'b0),//en_rx_i & wbm_cyc_o & wbm_ack_i), 
+    .dout(rd_dat_o), 
+    .re(rd_en_i),//en_rx_i & wbm_cyc_o & wbm_ack_i), 
     .full(sd_full_o), 
     .empty(wb_empty_o), 
     .wr_level(), 
@@ -104,7 +104,7 @@ generic_fifo_dc_gray #(
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray1 (
     .rd_clk(sd_clk),
-    .wr_clk(wb_clk), 
+    .wr_clk(clk), 
     .rst(!(rst | reset_fifo)), 
     .clr(1'b0), 
     .din(wbm_dat_i), 
@@ -118,7 +118,7 @@ generic_fifo_dc_gray #(
     );
 
 /*
-always @(posedge wb_clk or posedge rst)
+always @(posedge clk or posedge rst)
     if (rst) begin
         wbm_adr_o <= 0;
         fifo_rd_reg <= 0;
