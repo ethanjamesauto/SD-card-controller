@@ -320,19 +320,16 @@ sd_controller_wb sd_controller_wb0(
     .block_size_reg                 (block_size_reg),
     .controll_setting_reg           (controll_setting_reg),
     .cmd_int_status_reg             (cmd_int_status_reg),
-    .cmd_int_enable_reg             (cmd_int_enable_reg),
     .clock_divider_reg              (clock_divider_reg),
     .block_count_reg                (block_count_reg),
-    .dma_addr_reg                   (dma_addr_reg),
-    .data_int_status_reg            (data_int_status_reg),
-    .data_int_enable_reg            (data_int_enable_reg)
+    .data_int_status_reg            (data_int_status_reg)
     );
 
 //sd_edge_detect cmd_start_edge(.rst(rst), .clk(clk), .sig(cmd_start), .rise(cmd_start), .fall());
 //sd_edge_detect data_int_rst_edge(.rst(rst), .clk(clk), .sig(data_int_rst), .rise(data_int_rst), .fall());
 //sd_edge_detect cmd_int_rst_edge(.rst(rst), .clk(clk), .sig(cmd_int_rst), .rise(cmd_int_rst), .fall());
 
-assign int_cmd =  |(clk & cmd_int_enable_reg);
-assign int_data =  |(clk & data_int_enable_reg);
+//assign int_cmd =  |(clk & cmd_int_enable_reg);
+//assign int_data =  |(clk & data_int_enable_reg);
 
 endmodule
