@@ -100,7 +100,7 @@ begin: FSM_COMBO
             end
         end
         START_TX_FIFO: begin
-            if (tx_fifo_full_i == 1 && xfr_complete_i == 0)
+            if (xfr_complete_i == 0)
                 next_state = DATA_TRANSFER;
             else
                 next_state = START_TX_FIFO;
@@ -168,8 +168,7 @@ begin
                 start_rx_fifo_o <= 0;
                 start_tx_fifo_o <= 1;
                 tx_cycle <= 1;
-                if (tx_fifo_full_i == 1)
-                    d_write_o <= 1;
+                d_write_o <= 1;
             end
             DATA_TRANSFER: begin
                 d_read_o <= 0;
