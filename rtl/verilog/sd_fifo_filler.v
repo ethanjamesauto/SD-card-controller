@@ -54,6 +54,9 @@ module sd_fifo_filler(
            output [7:0] rd_dat_o,
            input rd_en_i,
 
+           input [7:0] wr_dat_i,
+           input wr_en_i,
+
            //Data Serial signals
            input sd_clk,
            input [7:0] dat_i,
@@ -66,10 +69,9 @@ module sd_fifo_filler(
            output wb_empty_o
        );
 
-`define FIFO_MEM_ADR_SIZE 10
+`define FIFO_MEM_ADR_SIZE 11
 `define MEM_OFFSET 4
 
-wire reset_fifo = 1'b0;
 wire fifo_rd;
 reg fifo_rd_ack;
 reg fifo_rd_reg;
@@ -80,42 +82,66 @@ reg fifo_rd_reg;
 //assign wbm_we_o = en_rx_i & !wb_empty_o;
 //assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
 //assign wbm_stb_o = en_rx_i ? wbm_cyc_o & fifo_rd_ack : wbm_cyc_o;
-
+//*
 generic_fifo_dc_gray #(
     .dw(8), 
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray0 (
     .rd_clk(clk),
     .wr_clk(sd_clk), 
-    .rst(!(rst | reset_fifo)), 
+    .rst(!rst), 
     .clr(1'b0), 
     .din(dat_i), 
     .we(wr_i),
     .dout(rd_dat_o), 
-    .re(rd_en_i),//en_rx_i & wbm_cyc_o & wbm_ack_i), 
+    .re(rd_en_i),
     .full(sd_full_o), 
     .empty(wb_empty_o), 
     .wr_level(), 
     .rd_level() 
-    );
-    
+);//*/
+/*
+fifo_generator_0 rd_fifo(
+    .rd_clk(clk),
+    .wr_clk(sd_clk), 
+    .rst(rst), 
+    .din(dat_i), 
+    .wr_en(wr_i),
+    .dout(rd_dat_o), 
+    .rd_en(rd_en_i),
+    .full(sd_full_o), 
+    .empty(wb_empty_o)
+);*/
+
 generic_fifo_dc_gray #(
     .dw(8), 
     .aw(`FIFO_MEM_ADR_SIZE)
     ) generic_fifo_dc_gray1 (
     .rd_clk(sd_clk),
     .wr_clk(clk), 
-    .rst(!(rst | reset_fifo)), 
+    .rst(!rst), 
     .clr(1'b0), 
-    .din(wbm_dat_i), 
-    .we(1'b0),//en_tx_i & wbm_cyc_o & wbm_stb_o & wbm_ack_i),
+    .din(wr_dat_i), 
+    .we(wr_en_i),
     .dout(dat_o), 
     .re(rd_i), 
     .full(wb_full_o), 
     .empty(sd_empty_o), 
     .wr_level(), 
     .rd_level() 
-    );
+);
+/*
+fifo_generator_0 wr_fifo(
+    .rd_clk(sd_clk),
+    .wr_clk(clk), 
+    .rst(rst), 
+    .din(wr_dat_i), 
+    .wr_en(wr_en_i),
+    .dout(dat_o), 
+    .rd_en(rd_i), 
+    .full(wb_full_o), 
+    .empty(sd_empty_o)
+);*/
 
 /*
 always @(posedge clk or posedge rst)

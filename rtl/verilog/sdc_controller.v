@@ -75,7 +75,10 @@ module sdc_controller(
 
            //FIFO interface
            rd_en_i,
-           rd_dat_o
+           rd_dat_o,
+
+           wr_en_i,
+           wr_dat_i
        );
 
 input wire clk;
@@ -106,6 +109,9 @@ output int_cmd, int_data;
 
 input rd_en_i;
 output [7:0] rd_dat_o;
+
+input wr_en_i;
+input [7:0] wr_dat_i;
 
 //SD clock
 wire sd_clk_o; //Sd_clk used in the system
@@ -258,6 +264,9 @@ sd_fifo_filler sd_fifo_filler0(
 
     .rd_en_i   (rd_en_i),
     .rd_dat_o  (rd_dat_o),
+
+    .wr_en_i   (wr_en_i),
+    .wr_dat_i  (wr_dat_i),
 
     .sd_clk    (sd_clk_o),
     .dat_i     (data_in_rx_fifo),
