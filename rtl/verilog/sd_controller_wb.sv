@@ -86,7 +86,8 @@ input wire [6:0] addr;
 input wire [7:0] data_in;
 output logic [7:0] data_out;
 
-output reg cmd_start;
+output wire cmd_start;
+reg cmd_start_sd_clk;
 
 //Buss accessible registers
 output [31:0] argument_reg;
@@ -129,11 +130,15 @@ byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte
 // and transfers it to the SD card clock speed domain.
 // This assumes that a clock divider is used to generate the SD card clock - 
 // no proper clock domain crossing is done.
+
+wire write_to_lsbyte = we && byte_sel == 2'b00;
+assign cmd_start = cmd_start_sd_clk || (write_to_lsbyte && reg_addr == `argument);
+
 reg prev_clk;
 always @(posedge clk)
 begin
     if (rst)begin
-        cmd_start <= 0;
+        cmd_start_sd_clk <= 0;
         data_int_rst <= 0;
         cmd_int_rst <= 0;
         prev_clk <= 0;
@@ -141,13 +146,13 @@ begin
         prev_clk <= sd_clk;
 
         if (prev_clk == 0 && sd_clk == 1)begin
-            cmd_start <= 0;
+            cmd_start_sd_clk <= 0;
             if (data_int_rst) data_int_rst <= 0;
             cmd_int_rst <= 0;
         end 
-        if (we && byte_sel == 2'b00) begin
+        if (write_to_lsbyte) begin
             case (reg_addr)
-                `argument: cmd_start <= 1;
+                `argument: cmd_start_sd_clk <= 1;
                 `cmd_isr: cmd_int_rst <= 1;
                 `data_isr: data_int_rst <= 1;
             endcase
