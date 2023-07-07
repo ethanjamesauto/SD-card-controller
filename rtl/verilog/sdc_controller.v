@@ -252,7 +252,6 @@ sd_data_serial_host sd_data_serial_host0(
     .bus_4bit       (controll_setting_reg[0]),
     .blkcnt         (block_count_reg),
     .start          ({d_read, d_write}),
-    .byte_alignment (dma_addr_reg),
     .sd_data_busy   (sd_data_busy),
     .busy           (data_busy),
     .crc_ok         (data_crc_ok)

@@ -66,7 +66,6 @@ module sd_data_serial_host(
            input bus_4bit,
            input [`BLKCNT_W-1:0] blkcnt,
            input [1:0] start,
-           input [1:0] byte_alignment,
            output sd_data_busy,
            output busy,
            output reg crc_ok,
@@ -95,7 +94,6 @@ parameter READ_DAT   = 6'b100000;
 reg [1:0] crc_status;
 reg busy_int;
 reg [`BLKCNT_W-1:0] blkcnt_reg;
-reg [1:0] byte_alignment_reg;
 reg [`BLKSIZE_W-1:0] blksize_reg;
 reg next_block;
 wire start_bit;
@@ -203,7 +201,6 @@ begin: FSM_OUT
         next_block <= 0;
         blkcnt_reg <= 0;
         blksize_reg <= 0;
-        byte_alignment_reg <= 0;
         data_cycles <= 0;
         bus_4bit_reg <= 0;      
     end
@@ -224,7 +221,6 @@ begin: FSM_OUT
                 data_index <= 0;
                 next_block <= 0;
                 blkcnt_reg <= blkcnt;
-                byte_alignment_reg <= byte_alignment;
                 blksize_reg <= blksize;
                 data_cycles <= (bus_4bit ? (blksize << 1) + `BLKSIZE_W'd2 : (blksize << 3) + `BLKSIZE_W'd8);
                 bus_4bit_reg <= bus_4bit;
@@ -234,34 +230,25 @@ begin: FSM_OUT
                 transf_cnt <= transf_cnt + 16'h1;
                 next_block <= 0;
                 rd <= 0;
-                //special case
-                if (transf_cnt == 0 && byte_alignment_reg == 2'b11 && bus_4bit_reg) begin
+                //special case TODO: still needed?
+                //if (transf_cnt == 0 && bus_4bit_reg) begin
+                //    rd <= 1;
+                //end else
+                if (transf_cnt == 1) begin
                     rd <= 1;
-                end
-                else if (transf_cnt == 1) begin
                     crc_rst <= 0;
                     crc_en <= 1;
                     if (bus_4bit_reg) begin
-                        last_din <= {
-                            data_in[7-(byte_alignment_reg << 3)], 
-                            data_in[6-(byte_alignment_reg << 3)], 
-                            data_in[5-(byte_alignment_reg << 3)], 
-                            data_in[4-(byte_alignment_reg << 3)]
-                            };
-                        crc_in <= {
-                            data_in[7-(byte_alignment_reg << 3)], 
-                            data_in[6-(byte_alignment_reg << 3)], 
-                            data_in[5-(byte_alignment_reg << 3)], 
-                            data_in[4-(byte_alignment_reg << 3)]
-                            };
+                        last_din <= data_in[7:4];
+                        crc_in <= data_in[7:4];
                     end
                     else begin
-                        last_din <= {3'h7, data_in[7-(byte_alignment_reg << 3)]};
-                        crc_in <= {3'h7, data_in[7-(byte_alignment_reg << 3)]};
+                        last_din <= {3'h7, data_in[7]};
+                        crc_in <= {3'h7, data_in[7]};
                     end
                     DAT_oe_o <= 1;
                     DAT_dat_o <= bus_4bit_reg ? 4'h0 : 4'he;
-                    data_index <= bus_4bit_reg ? {2'b00, byte_alignment_reg, 1'b1} : {byte_alignment_reg, 3'b001};
+                    data_index <= bus_4bit_reg ? {2'b00, 2'b00, 1'b1} : {2'b00, 3'b001};
                 end
                 else if ((transf_cnt >= 2) && (transf_cnt <= data_cycles+1)) begin
                     DAT_oe_o<=1;
@@ -278,7 +265,7 @@ begin: FSM_OUT
                             data_in[5-(data_index[0]<<2)], 
                             data_in[4-(data_index[0]<<2)]
                             };
-                        if (data_index[0] == 3'h1/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
+                        if (data_index[0] == 1'b0/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
                             rd <= 1;
                         end
                     end
@@ -328,7 +315,6 @@ begin: FSM_OUT
                 next_block <= (blkcnt_reg != 0);
                 if (next_state != WRITE_BUSY) begin
                     blkcnt_reg <= blkcnt_reg - `BLKCNT_W'h1;
-                    byte_alignment_reg <= byte_alignment_reg + blksize_reg[1:0] + 2'b1;
                     crc_rst <= 1;
                     crc_c <= 16;
                     crc_status <= 0;
@@ -343,7 +329,7 @@ begin: FSM_OUT
                 crc_c <= 15;// end
                 next_block <= 0;
                 transf_cnt <= 0;
-                data_index <= bus_4bit_reg ? (byte_alignment_reg << 1) : (byte_alignment_reg << 3);
+                data_index <= 0;
             end
             READ_DAT: begin
                 if (transf_cnt < data_cycles) begin
@@ -381,7 +367,6 @@ begin: FSM_OUT
                         if (crc_c == 0) begin
                             next_block <= (blkcnt_reg != 0);
                             blkcnt_reg <= blkcnt_reg - `BLKCNT_W'h1;
-                            byte_alignment_reg <= byte_alignment_reg + blksize_reg[1:0] + 2'b1;
                             crc_rst <= 1;
                         end
                     end

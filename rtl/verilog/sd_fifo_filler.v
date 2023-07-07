@@ -76,72 +76,74 @@ wire fifo_rd;
 reg fifo_rd_ack;
 reg fifo_rd_reg;
 
+`define VIVADO
+
 //assign fifo_rd = wbm_cyc_o & wbm_ack_i;
 //assign reset_fifo = !en_rx_i & !en_tx_i;
 
 //assign wbm_we_o = en_rx_i & !wb_empty_o;
 //assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
 //assign wbm_stb_o = en_rx_i ? wbm_cyc_o & fifo_rd_ack : wbm_cyc_o;
-//*
-generic_fifo_dc_gray #(
-    .dw(8), 
-    .aw(`FIFO_MEM_ADR_SIZE)
-    ) generic_fifo_dc_gray0 (
-    .rd_clk(clk),
-    .wr_clk(sd_clk), 
-    .rst(!rst), 
-    .clr(1'b0), 
-    .din(dat_i), 
-    .we(wr_i),
-    .dout(rd_dat_o), 
-    .re(rd_en_i),
-    .full(sd_full_o), 
-    .empty(wb_empty_o), 
-    .wr_level(), 
-    .rd_level() 
-);//*/
-/*
-fifo_generator_0 rd_fifo(
-    .rd_clk(clk),
-    .wr_clk(sd_clk), 
-    .rst(rst), 
-    .din(dat_i), 
-    .wr_en(wr_i),
-    .dout(rd_dat_o), 
-    .rd_en(rd_en_i),
-    .full(sd_full_o), 
-    .empty(wb_empty_o)
-);*/
 
-generic_fifo_dc_gray #(
-    .dw(8), 
-    .aw(`FIFO_MEM_ADR_SIZE)
-    ) generic_fifo_dc_gray1 (
-    .rd_clk(sd_clk),
-    .wr_clk(clk), 
-    .rst(!rst), 
-    .clr(1'b0), 
-    .din(wr_dat_i), 
-    .we(wr_en_i),
-    .dout(dat_o), 
-    .re(rd_i), 
-    .full(wb_full_o), 
-    .empty(sd_empty_o), 
-    .wr_level(), 
-    .rd_level() 
-);
-/*
-fifo_generator_0 wr_fifo(
-    .rd_clk(sd_clk),
-    .wr_clk(clk), 
-    .rst(rst), 
-    .din(wr_dat_i), 
-    .wr_en(wr_en_i),
-    .dout(dat_o), 
-    .rd_en(rd_i), 
-    .full(wb_full_o), 
-    .empty(sd_empty_o)
-);*/
+`ifndef VIVADO
+    generic_fifo_dc_gray #(
+        .dw(8), 
+        .aw(`FIFO_MEM_ADR_SIZE)
+        ) generic_fifo_dc_gray0 (
+        .rd_clk(clk),
+        .wr_clk(sd_clk), 
+        .rst(!rst), 
+        .clr(1'b0), 
+        .din(dat_i), 
+        .we(wr_i),
+        .dout(rd_dat_o), 
+        .re(rd_en_i),
+        .full(sd_full_o), 
+        .empty(wb_empty_o), 
+        .wr_level(), 
+        .rd_level() 
+    );
+    generic_fifo_dc_gray #(
+        .dw(8), 
+        .aw(`FIFO_MEM_ADR_SIZE)
+        ) generic_fifo_dc_gray1 (
+        .rd_clk(sd_clk),
+        .wr_clk(clk), 
+        .rst(!rst), 
+        .clr(1'b0), 
+        .din(wr_dat_i), 
+        .we(wr_en_i),
+        .dout(dat_o), 
+        .re(rd_i), 
+        .full(wb_full_o), 
+        .empty(sd_empty_o), 
+        .wr_level(), 
+        .rd_level() 
+    );
+`else
+    fifo_generator_0 rd_fifo(
+        .rd_clk(clk),
+        .wr_clk(sd_clk), 
+        .rst(rst), 
+        .din(dat_i), 
+        .wr_en(wr_i),
+        .dout(rd_dat_o), 
+        .rd_en(rd_en_i),
+        .full(sd_full_o), 
+        .empty(wb_empty_o)
+    );
+    fifo_generator_1 wr_fifo(
+        .rd_clk(sd_clk),
+        .wr_clk(clk), 
+        .rst(rst), 
+        .din(wr_dat_i), 
+        .wr_en(wr_en_i),
+        .dout(dat_o), 
+        .rd_en(rd_i), 
+        .full(wb_full_o), 
+        .empty(sd_empty_o)
+    );
+`endif
 
 /*
 always @(posedge clk or posedge rst)
