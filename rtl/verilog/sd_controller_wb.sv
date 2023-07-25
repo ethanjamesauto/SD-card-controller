@@ -74,7 +74,7 @@ module sd_controller_wb(
            cmd_int_status_reg,
            clock_divider_reg,
            block_count_reg,
-           data_int_status_reg,
+           data_int_status_reg
        );
 
 input wire clk;
@@ -86,8 +86,10 @@ input wire [6:0] addr;
 input wire [7:0] data_in;
 output logic [7:0] data_out;
 
+//Register Controll
 output wire cmd_start;
-reg cmd_start_sd_clk;
+output wire data_int_rst;
+output wire cmd_int_rst;
 
 //Buss accessible registers
 output [31:0] argument_reg;
@@ -104,9 +106,6 @@ output [0:0] controll_setting_reg;
 input wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg;
 output [7:0] clock_divider_reg;
 input  wire [`INT_DATA_SIZE-1:0] data_int_status_reg;
-//Register Controll
-output reg data_int_rst;
-output reg cmd_int_rst;
 output [`BLKCNT_W-1:0]block_count_reg;
 
 parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
@@ -130,31 +129,36 @@ byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte
 // and transfers it to the SD card clock speed domain.
 // This assumes that a clock divider is used to generate the SD card clock - 
 // no proper clock domain crossing is done.
+// TODO: reevaluate this
 
-wire write_to_lsbyte = we && byte_sel == 2'b00;
-assign cmd_start = cmd_start_sd_clk || (write_to_lsbyte && reg_addr == `argument);
+reg cmd_start_sysclk;
+reg data_int_rst_sysclk;
+reg cmd_int_rst_sysclk;
+monostable_domain_cross start_cdc(rst, clk, cmd_start_sysclk, sd_clk, cmd_start);
+monostable_domain_cross data_int_rst_cdc(rst, clk, data_int_rst_sysclk, sd_clk, data_int_rst);
+monostable_domain_cross cmd_int_rst_cdc(rst, clk, cmd_int_rst_sysclk, sd_clk, cmd_int_rst);
 
 reg prev_clk;
 always @(posedge clk)
 begin
     if (rst)begin
-        cmd_start_sd_clk <= 0;
-        data_int_rst <= 0;
-        cmd_int_rst <= 0;
+        cmd_start_sysclk <= 0;
+        data_int_rst_sysclk <= 0;
+        cmd_int_rst_sysclk <= 0;
         prev_clk <= 0;
     end else begin
         prev_clk <= sd_clk;
 
         if (prev_clk == 0 && sd_clk == 1)begin
-            cmd_start_sd_clk <= 0;
-            if (data_int_rst) data_int_rst <= 0;
-            cmd_int_rst <= 0;
+            cmd_start_sysclk <= 0;
+            if (data_int_rst_sysclk) data_int_rst_sysclk <= 0;
+            cmd_int_rst_sysclk <= 0;
         end 
-        if (write_to_lsbyte) begin
+        if (we && byte_sel == 2'b00) begin
             case (reg_addr)
-                `argument: cmd_start_sd_clk <= 1;
-                `cmd_isr: cmd_int_rst <= 1;
-                `data_isr: data_int_rst <= 1;
+                `argument: cmd_start_sysclk <= 1;
+                `cmd_isr: cmd_int_rst_sysclk <= 1;
+                `data_isr: data_int_rst_sysclk <= 1;
             endcase
         end
     end

@@ -69,6 +69,7 @@ module sd_fifo_filler(
            output wb_empty_o
        );
 
+//`define BENCHMARK
 `define FIFO_MEM_ADR_SIZE 11
 `define MEM_OFFSET 4
 
@@ -95,9 +96,10 @@ reg fifo_rd_reg;
         .wr_en(wr_i),
         .dout(rd_dat_o), 
         .rd_en(rd_en_i),
-        .full(sd_full_o), 
+        //.full(sd_full_o), 
         .empty(wb_empty_o)
     );
+    assign sd_full_o = 1'b0;
     fifo_generator_1 wr_fifo(
         .rd_clk(sd_clk),
         .wr_clk(clk), 
@@ -106,9 +108,10 @@ reg fifo_rd_reg;
         .wr_en(wr_en_i),
         .dout(dat_o), 
         .rd_en(rd_i), 
-        .full(wb_full_o), 
-        .empty(sd_empty_o)
+        .full(wb_full_o) 
+        //.empty(sd_empty_o)
     );
+    assign sd_empty_o = 1'b0;
 `elsif RADIANT
     sd_fifo rd_fifo(
         .rd_clk_i(clk),
@@ -129,7 +132,6 @@ reg fifo_rd_reg;
         .rd_clk(clk),
         .wr_clk(sd_clk), 
         .rst(!rst), 
-        .clr(1'b0), 
         .din(dat_i), 
         .we(wr_i),
         .dout(rd_dat_o), 
@@ -137,7 +139,13 @@ reg fifo_rd_reg;
         .full(sd_full_o), 
         .empty(wb_empty_o), 
         .wr_level(), 
-        .rd_level() 
+        .rd_level(),
+
+        `ifdef BENCHMARK 
+            .clr(1'b1)
+        `else
+            .clr(1'b0)
+        `endif
     );
     generic_fifo_dc_gray #(
         .dw(8), 
