@@ -87,9 +87,9 @@ input wire [7:0] data_in;
 output logic [7:0] data_out;
 
 //Register Controll
-output wire cmd_start;
-output wire data_int_rst;
-output wire cmd_int_rst;
+output reg cmd_start;
+output reg data_int_rst;
+output reg cmd_int_rst;
 
 //Buss accessible registers
 output [31:0] argument_reg;
@@ -125,45 +125,24 @@ byte_en_reg #(8, 1) clock_d_r(clk, rst, we && reg_addr == `clock_d, byte_sel, da
 byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
 //*
 
-// These registers take the cmd_start signal (and other signals) from the system clock speed domain 
-// and transfers it to the SD card clock speed domain.
-// This assumes that a clock divider is used to generate the SD card clock - 
-// no proper clock domain crossing is done.
-// TODO: reevaluate this
-
-reg cmd_start_sysclk;
-reg data_int_rst_sysclk;
-reg cmd_int_rst_sysclk;
-monostable_domain_cross start_cdc(rst, clk, cmd_start_sysclk, sd_clk, cmd_start);
-monostable_domain_cross data_int_rst_cdc(rst, clk, data_int_rst_sysclk, sd_clk, data_int_rst);
-monostable_domain_cross cmd_int_rst_cdc(rst, clk, cmd_int_rst_sysclk, sd_clk, cmd_int_rst);
-
-reg prev_clk;
-always @(posedge clk)
-begin
+always @(posedge clk or posedge rst) begin
     if (rst)begin
-        cmd_start_sysclk <= 0;
-        data_int_rst_sysclk <= 0;
-        cmd_int_rst_sysclk <= 0;
-        prev_clk <= 0;
+        cmd_start <= 0;
+        data_int_rst <= 0;
+        cmd_int_rst <= 0;
     end else begin
-        prev_clk <= sd_clk;
-
-        if (prev_clk == 0 && sd_clk == 1)begin
-            cmd_start_sysclk <= 0;
-            if (data_int_rst_sysclk) data_int_rst_sysclk <= 0;
-            cmd_int_rst_sysclk <= 0;
-        end 
+        cmd_start <= 0;
+        data_int_rst <= 0;
+        cmd_int_rst <= 0;
         if (we && byte_sel == 2'b00) begin
             case (reg_addr)
-                `argument: cmd_start_sysclk <= 1;
-                `cmd_isr: cmd_int_rst_sysclk <= 1;
-                `data_isr: data_int_rst_sysclk <= 1;
+                `argument: cmd_start <= 1;
+                `cmd_isr: cmd_int_rst <= 1;
+                `data_isr: data_int_rst <= 1;
             endcase
         end
     end
-end//*/
-
+end
 
 
 // TODO: Some of these registers don't need to be read from. They should be removed from the case statement to save LUTs.
