@@ -70,7 +70,7 @@ module sd_fifo_filler(
        );
 
 //`define BENCHMARK
-`define FIFO_MEM_ADR_SIZE 11
+`define FIFO_MEM_ADR_SIZE 10
 `define MEM_OFFSET 4
 
 wire fifo_rd;
@@ -124,6 +124,17 @@ reg fifo_rd_reg;
         .full_o(sd_full_o), 
         .empty_o(wb_empty_o)
     );
+    sd_fifo wr_fifo(
+        .rd_clk_i(sd_clk),
+        .wr_clk_i(clk), 
+        .rst_i(rst), 
+        .wr_data_i(wr_dat_i), 
+        .wr_en_i(wr_en_i),
+        .rd_data_o(dat_o), 
+        .rd_en_i(rd_i), 
+        .full_o(wb_full_o), 
+        .empty_o(sd_empty_o)
+    );
 `else
     generic_fifo_dc_gray #(
         .dw(8), 
@@ -136,7 +147,7 @@ reg fifo_rd_reg;
         .we(wr_i),
         .dout(rd_dat_o), 
         .re(rd_en_i),
-        .full(sd_full_o), 
+        //.full(sd_full_o), 
         .empty(wb_empty_o), 
         .wr_level(), 
         .rd_level(),
@@ -147,6 +158,7 @@ reg fifo_rd_reg;
             .clr(1'b0)
         `endif
     );
+    assign sd_full_o = 1'b0;
     generic_fifo_dc_gray #(
         .dw(8), 
         .aw(`FIFO_MEM_ADR_SIZE)
@@ -160,10 +172,11 @@ reg fifo_rd_reg;
         .dout(dat_o), 
         .re(rd_i), 
         .full(wb_full_o), 
-        .empty(sd_empty_o), 
+        //.empty(sd_empty_o), 
         .wr_level(), 
         .rd_level() 
     );
+    assign sd_empty_o = 1'b0;
 `endif
 
 /*
