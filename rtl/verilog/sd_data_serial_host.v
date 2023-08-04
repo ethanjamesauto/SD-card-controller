@@ -231,11 +231,11 @@ begin: FSM_OUT
                 next_block <= 0;
                 rd <= 0;
                 //special case TODO: still needed?
-                //if (transf_cnt == 0 && bus_4bit_reg) begin
-                //    rd <= 1;
-                //end else
-                if (transf_cnt == 1) begin
+                if (transf_cnt == 0 && bus_4bit_reg) begin
                     rd <= 1;
+                end else
+                if (transf_cnt == 1) begin
+                    //rd <= 1;
                     crc_rst <= 0;
                     crc_en <= 1;
                     if (bus_4bit_reg) begin
@@ -265,7 +265,7 @@ begin: FSM_OUT
                             data_in[5-(data_index[0]<<2)], 
                             data_in[4-(data_index[0]<<2)]
                             };
-                        if (data_index[0] == 1'b0/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
+                        if (data_index[0] == 1'b1/*not 7 - read delay !!!*/ && transf_cnt <= data_cycles-1) begin
                             rd <= 1;
                         end
                     end
