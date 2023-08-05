@@ -154,7 +154,6 @@ wire [31:0] argument_reg;
 wire [`CMD_REG_SIZE-1:0] command_reg;
 wire [`CMD_TIMEOUT_W-1:0] cmd_timeout_reg;
 wire [`DATA_TIMEOUT_W-1:0] data_timeout_reg;
-wire [0:0] software_reset_reg;
 wire [31:0] response_0_reg;
 wire [31:0] response_1_reg;
 wire [31:0] response_2_reg;
@@ -166,10 +165,13 @@ wire [1:0] dma_addr_reg;
 wire [7:0] clock_divider_reg;
 
 wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg_bus_clk;
-wire [`INT_DATA_SIZE-1:0] data_int_status_reg_bus_clk;
-
 wire [`INT_CMD_SIZE-1:0] cmd_int_status_reg_sd_clk;
+
+wire [`INT_DATA_SIZE-1:0] data_int_status_reg_bus_clk;
 wire [`INT_DATA_SIZE-1:0] data_int_status_reg_sd_clk;
+
+wire [0:0] software_reset_reg_bus_clk;
+wire [0:0] software_reset_reg_sd_clk;
 
 sd_clock_divider clock_divider0(
     .CLK (clk),
@@ -182,7 +184,7 @@ assign sd_clk_o_pad  = sd_clk_o ;
 
 sd_cmd_master sd_cmd_master0(
     .sd_clk       (sd_clk_o),
-    .rst          (rst | software_reset_reg[0]),
+    .rst          (rst | software_reset_reg_sd_clk[0]),
     .start_i      (cmd_start_sd_clk),
     .int_status_rst_i(cmd_int_rst_sd_clk),
     .setting_o    (cmd_setting),
@@ -207,7 +209,7 @@ sd_cmd_master sd_cmd_master0(
 sd_cmd_serial_host cmd_serial_host0(
     .sd_clk     (sd_clk_o),
     .rst        (rst | 
-                 software_reset_reg[0] | 
+                 software_reset_reg_sd_clk[0] | 
                  go_idle),
     .setting_i  (cmd_setting),
     .cmd_i      (cmd),
@@ -224,7 +226,7 @@ sd_cmd_serial_host cmd_serial_host0(
 sd_data_master sd_data_master0(
     .sd_clk           (sd_clk_o),
     .rst              (rst | 
-                       software_reset_reg[0]),
+                       software_reset_reg_sd_clk[0]),
     .start_tx_i       (data_start_tx),
     .start_rx_i       (data_start_rx),
     .timeout_i		  (data_timeout_reg),
@@ -243,7 +245,7 @@ sd_data_master sd_data_master0(
 
 sd_data_serial_host sd_data_serial_host0(
     .sd_clk         (sd_clk_o),
-    .rst            (rst | software_reset_reg[0]),
+    .rst            (rst | software_reset_reg_sd_clk[0]),
     .data_in        (data_out_tx_fifo),
     .rd             (rd_fifo),
     .data_out       (data_in_rx_fifo),
@@ -262,7 +264,7 @@ sd_data_serial_host sd_data_serial_host0(
 
 sd_fifo_filler sd_fifo_filler0(
     .clk    (clk),
-    .rst       (rst | software_reset_reg[0]),
+    .rst       (rst | software_reset_reg_sd_clk[0]),
 
     .rd_en_i   (rd_en_i),
     .rd_dat_o  (rd_dat_o),
@@ -283,7 +285,7 @@ sd_fifo_filler sd_fifo_filler0(
 
 sd_data_xfer_trig sd_data_xfer_trig0 (
     .sd_clk                (sd_clk_o),
-    .rst                   (rst | software_reset_reg[0]),
+    .rst                   (rst | software_reset_reg_sd_clk[0]),
     .cmd_with_data_start_i (cmd_start_sd_clk & 
                             (command_reg[`CMD_WITH_DATA] != 
                              2'b00)),
@@ -313,7 +315,7 @@ sd_controller_wb sd_controller_wb0(
     .response_1_reg                 (response_1_reg),
     .response_2_reg                 (response_2_reg),
     .response_3_reg                 (response_3_reg),
-    .software_reset_reg             (software_reset_reg),
+    .software_reset_reg             (software_reset_reg_bus_clk),
     .cmd_timeout_reg                (cmd_timeout_reg),
     .data_timeout_reg               (data_timeout_reg),
     .block_size_reg                 (block_size_reg),
@@ -332,6 +334,7 @@ monostable_domain_cross data_int_rst_cross(rst, clk, data_int_rst_bus_clk, sd_cl
 monostable_domain_cross cmd_int_rst_cross(rst, clk, cmd_int_rst_bus_clk, sd_clk_o, cmd_int_rst_sd_clk);
 bistable_domain_cross #(`INT_CMD_SIZE) cmd_int_status_reg_cross(rst, sd_clk_o, cmd_int_status_reg_sd_clk, clk, cmd_int_status_reg_bus_clk);
 bistable_domain_cross #(`INT_DATA_SIZE) data_int_status_reg_cross(rst, sd_clk_o, data_int_status_reg_sd_clk, clk, data_int_status_reg_bus_clk);
+bistable_domain_cross software_reset_reg_cross(rst, clk, software_reset_reg_bus_clk, sd_clk_o, software_reset_reg_sd_clk);
 
 //assign int_cmd =  |(cmd_int_status_reg_bus_clk & cmd_int_enable_reg_bus_clk);
 //assign int_data =  |(data_int_status_reg_bus_clk & data_int_enable_reg_bus_clk);
