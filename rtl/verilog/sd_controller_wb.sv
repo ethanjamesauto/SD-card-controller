@@ -116,14 +116,13 @@ wire [1:0] byte_sel = addr[1:0];
 
 byte_en_reg #(32) argument_r(clk, rst, we && reg_addr == `argument, byte_sel, data_in, argument_reg);
 byte_en_reg #(`CMD_REG_SIZE) command_r(clk, rst, we && reg_addr == `command, byte_sel, data_in, command_reg);
-byte_en_reg #(8) reset_r(clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg); //TODO: find a way to make this 1 bit
+byte_en_reg #(1) reset_r(clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg);
 byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
 byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
 byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
-byte_en_reg #(8, 0) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg); //TODO: find a way to make this 1 bit
+byte_en_reg #(1) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
 byte_en_reg #(8, 1) clock_d_r(clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
 byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
-//*
 
 always @(posedge clk or posedge rst) begin
     if (rst)begin
