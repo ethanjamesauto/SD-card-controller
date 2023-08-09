@@ -84,7 +84,9 @@ input wire sd_clk;
 input wire we;
 input wire [6:0] addr;
 input wire [7:0] data_in;
-output logic [7:0] data_out;
+
+output reg [7:0] data_out;
+reg [31:0] wb_dat_o;
 
 //Register Controll
 output reg cmd_start;
@@ -145,8 +147,7 @@ end
 
 
 // TODO: Some of these registers don't need to be read from. They should be removed from the case statement to save LUTs.
-logic [31:0] wb_dat_o;
-always_comb begin
+always @(*) begin
 	wb_dat_o = 32'd0;
     case (reg_addr)
         `argument: wb_dat_o = argument_reg;
