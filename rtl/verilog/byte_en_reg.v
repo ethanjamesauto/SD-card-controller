@@ -5,12 +5,12 @@ module byte_en_reg
     parameter INIT = 0
 )
 (
-    input logic clk,
-    input logic rst,
-    input logic we,
-    input logic [1:0] byte_sel,
-    input logic [7:0] byte_in,
-    output logic [DATA_WIDTH - 1:0] data_out
+    input clk,
+    input rst,
+    input we,
+    input [1:0] byte_sel,
+    input [7:0] byte_in,
+    output reg [DATA_WIDTH - 1:0] data_out
 );
 
 // only needed for 1-bit registers. TODO: why?
