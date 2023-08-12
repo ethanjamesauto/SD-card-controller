@@ -72,8 +72,6 @@ module sd_data_master (
            input int_status_rst_i
        );
 
-reg [`DATA_TIMEOUT_W-1:0] timeout_reg;
-reg [`DATA_TIMEOUT_W-1:0] watchdog;
 reg tx_cycle;
 parameter SIZE = 3;
 reg [SIZE-1:0] state;
@@ -143,8 +141,6 @@ begin
         trans_done <= 0;
         tx_cycle <= 0;
         int_status_o <= 0;
-        timeout_reg <= 0;
-        watchdog <= 0;
     end
     else begin
         case(state)
@@ -155,8 +151,6 @@ begin
                 d_read_o <= 0;
                 trans_done <= 0;
                 tx_cycle <= 0;
-                timeout_reg <= timeout_i;
-                watchdog <= 0;
             end
             START_RX_FIFO: begin
                 start_rx_fifo_o <= 1;
@@ -173,7 +167,6 @@ begin
             DATA_TRANSFER: begin
                 d_read_o <= 0;
                 d_write_o <= 0;
-                watchdog <= watchdog + `DATA_TIMEOUT_W'd1;
                 if (tx_cycle) begin
                     if (tx_fifo_empty_i) begin
                         if (!trans_done) begin
@@ -198,15 +191,7 @@ begin
                         d_read_o <= 1;
                     end
                 end
-                if (|timeout_reg && watchdog >= timeout_reg) begin
-                    int_status_o[`INT_DATA_CTE] <= 1;
-                    int_status_o[`INT_DATA_EI] <= 1;
-                    trans_done <= 1;
-                    //stop sd_data_serial_host
-                    d_write_o <= 1;
-                    d_read_o <= 1;
-                end
-                else if (xfr_complete_i) begin //Transfer complete
+                if (xfr_complete_i) begin //Transfer complete
                     d_write_o <= 0;
                     d_read_o <= 0;
                     trans_done <= 1;
