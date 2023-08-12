@@ -85,11 +85,11 @@ parameter RESP_SIZE = 128;
 
 //---------------Internal variable-----------
 reg cmd_dat_reg;
-integer resp_len;
+reg [6:0] resp_len; // 0-127 range
 reg with_response;
 reg [CMD_SIZE-1:0] cmd_buff;
 reg [RESP_SIZE-1:0] resp_buff;
-integer resp_idx;
+reg [6:0] resp_idx; // 0-127 range
 //CRC
 reg crc_rst;
 reg [6:0]crc_in;
@@ -98,7 +98,7 @@ reg crc_enable;
 reg crc_bit;
 reg crc_ok;
 //-Internal Counterns
-integer counter;
+reg [7:0] counter; // 0-255 range
 //-State Machine
 parameter STATE_SIZE = 3;
 parameter
