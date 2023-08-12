@@ -74,7 +74,6 @@ module sd_cmd_master(
        );
 
 //-----------Types--------------------------------------------------------
-reg [`CMD_TIMEOUT_W-1:0] timeout_reg;
 reg crc_check;
 reg index_check;
 reg busy_check;
@@ -83,7 +82,6 @@ reg long_response;
 reg [`INT_CMD_SIZE-1:0] int_status_reg;
 //reg card_present;
 //reg [3:0]debounce;
-reg [`CMD_TIMEOUT_W-1:0] watchdog;
 parameter SIZE = 2;
 reg [SIZE-1:0] state;
 reg [SIZE-1:0] next_state;
@@ -169,8 +167,6 @@ begin
         start_xfr_o <= 0;
         index_check <= 0;
         busy_check <= 0;
-        watchdog <= 0;
-        timeout_reg <= 0;
         go_idle_o <= 0;
     end
     else begin
@@ -195,8 +191,6 @@ begin
                 cmd_o[39:38] <= 2'b01;
                 cmd_o[37:32] <= command_i[`CMD_INDEX];  //CMD_INDEX
                 cmd_o[31:0] <= argument_i; //CMD_Argument
-                timeout_reg <= timeout_i;
-                watchdog <= 0;
                 if (start_i) begin
                     start_xfr_o <= 1;
                     int_status_reg <= 0;
@@ -204,14 +198,8 @@ begin
             end
             EXECUTE: begin
                 start_xfr_o <= 0;
-                watchdog <= watchdog + `CMD_TIMEOUT_W'd1;
-                if (|timeout_reg && watchdog >= timeout_reg) begin
-                    int_status_reg[`INT_CMD_CTE] <= 1;
-                    int_status_reg[`INT_CMD_EI] <= 1;
-                    go_idle_o <= 1;
-                end
                 //Incoming New Status
-                else begin //if ( req_in_int == 1) begin
+                begin //if ( req_in_int == 1) begin
                     if (finish_i) begin //Data avaible
                         if (crc_check & !crc_ok_i) begin
                             int_status_reg[`INT_CMD_CCRCE] <= 1;
