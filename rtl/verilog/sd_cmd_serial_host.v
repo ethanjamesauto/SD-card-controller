@@ -100,16 +100,16 @@ reg crc_ok;
 //-Internal Counterns
 integer counter;
 //-State Machine
-parameter STATE_SIZE = 7;
+parameter STATE_SIZE = 3;
 parameter
-    INIT = 7'h00,
-    IDLE = 7'h01,
-    SETUP_CRC = 7'h02,
-    WRITE = 7'h04,
-    READ_WAIT = 7'h08,
-    READ = 7'h10,
-    FINISH_WR = 7'h20,
-    FINISH_WO = 7'h40;
+    INIT = 3'd0,
+    IDLE = 3'd1,
+    SETUP_CRC = 3'd2,
+    WRITE = 3'd3,
+    READ_WAIT = 3'd4,
+    READ = 3'd5,
+    FINISH_WR = 3'd6,
+    FINISH_WO = 3'd7;
 reg [STATE_SIZE-1:0] state;
 reg [STATE_SIZE-1:0] next_state;
 //Misc
