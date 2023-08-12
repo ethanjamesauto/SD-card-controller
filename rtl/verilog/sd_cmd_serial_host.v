@@ -89,7 +89,6 @@ reg [6:0] resp_len; // 0-127 range
 reg with_response;
 reg [CMD_SIZE-1:0] cmd_buff;
 reg [RESP_SIZE-1:0] resp_buff;
-reg [6:0] resp_idx; // 0-127 range
 //CRC
 reg crc_rst;
 reg [6:0]crc_in;
@@ -216,7 +215,6 @@ always @(posedge sd_clk or posedge rst)
 begin: FSM_OUT
     if (rst) begin
         crc_enable <= 0;
-        resp_idx <= 0;
         cmd_oe_o <= 1;
         cmd_out_o <= 1;
         resp_buff <= 0;
@@ -241,7 +239,6 @@ begin: FSM_OUT
                 counter <= 0;
                 crc_rst <= 1;
                 crc_enable <= 0;
-                resp_idx <= 0;
                 crc_ok_o <= 0;
                 index_ok_o <= 0;
                 finish_o <= 0;
@@ -295,12 +292,7 @@ begin: FSM_OUT
                 crc_enable <= (resp_len != RESP_SIZE-1 || counter > 7);
                 cmd_oe_o <= 0;
                 if (counter <= resp_len) begin
-                    if (counter < 8) //1+1+6 (S,T,Index)
-                        resp_buff[RESP_SIZE-1-counter] <= cmd_dat_reg;
-                    else begin
-                        resp_idx <= resp_idx + 1;
-                        resp_buff[RESP_SIZE-9-resp_idx] <= cmd_dat_reg;
-                    end
+                    resp_buff[RESP_SIZE-1-counter] <= cmd_dat_reg;
                     crc_bit <= cmd_dat_reg;
                 end
                 else if (counter-resp_len <= 7) begin
