@@ -70,7 +70,7 @@ input [39:0] cmd_i;
 input start_i;
 input cmd_dat_i;
 //---------------Output ports---------------
-output reg [119:0] response_o;
+output [119:0] response_o;
 output reg finish_o;
 output reg crc_ok_o;
 output reg index_ok_o;
@@ -126,6 +126,8 @@ sd_crc_7 CRC_7(
              sd_clk,
              crc_rst,
              crc_val);
+
+assign response_o = resp_buff[119:0];
 
 //------------------------------------------
 always @(state or counter or start_i or with_response or cmd_dat_reg or resp_len)
@@ -222,7 +224,6 @@ begin: FSM_OUT
         crc_rst <= 1;
         crc_bit <= 0;
         crc_in <= 0;
-        response_o <= 0;
         index_ok_o <= 0;
         crc_ok_o <= 0;
         crc_ok <= 0;
@@ -240,7 +241,6 @@ begin: FSM_OUT
                 counter <= 0;
                 crc_rst <= 1;
                 crc_enable <= 0;
-                response_o <= 0;
                 resp_idx <= 0;
                 crc_ok_o <= 0;
                 index_ok_o <= 0;
@@ -325,7 +325,6 @@ begin: FSM_OUT
                 crc_rst <= 1;
                 counter <= 0;
                 cmd_oe_o <= 0;
-                response_o <= resp_buff[119:0];
             end
         endcase
     end
