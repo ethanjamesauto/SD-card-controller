@@ -151,7 +151,7 @@ always @(*) begin
 	wb_dat_o = 32'd0;
     case (reg_addr)
         //`argument: wb_dat_o = argument_reg;
-        //`command: wb_dat_o[`CMD_REG_SIZE-1:0] = command_reg;
+        `command: wb_dat_o[`CMD_REG_SIZE-1:0] = command_reg;
         `resp0: wb_dat_o = response_0_reg;
         `resp1: wb_dat_o = response_1_reg;
         `resp2: wb_dat_o = response_2_reg;
