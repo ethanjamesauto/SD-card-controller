@@ -67,10 +67,10 @@ module sd_cmd_master(
            input [`CMD_REG_SIZE-1:0] command_i,
            input [`CMD_TIMEOUT_W-1:0] timeout_i,
            output [`INT_CMD_SIZE-1:0] int_status_o,
-           output reg [31:0] response_0_o,
-           output reg [31:0] response_1_o,
-           output reg [31:0] response_2_o,
-           output reg [31:0] response_3_o
+           output [31:0] response_0_o,
+           output [31:0] response_1_o,
+           output [31:0] response_2_o,
+           output [31:0] response_3_o
        );
 
 //-----------Types--------------------------------------------------------
@@ -91,6 +91,11 @@ parameter BUSY_CHECK = 2'b10;
 
 assign setting_o[1:0] = {long_response, expect_response};
 assign int_status_o = state == IDLE ? int_status_reg : 5'h0;
+
+assign response_0_o = response_i[119:88];
+assign response_1_o = response_i[87:56];
+assign response_2_o = response_i[55:24];
+assign response_3_o = {response_i[23:0], 8'h00};
 
 //---------------Input ports---------------
 
@@ -156,10 +161,6 @@ always @(posedge sd_clk or posedge rst)
 begin
     if (rst) begin
         crc_check <= 0;
-        response_0_o <= 0;
-        response_1_o <= 0;
-        response_2_o <= 0;
-        response_3_o <= 0;
         int_status_reg <= 0;
         expect_response <= 0;
         long_response <= 0;
@@ -210,12 +211,6 @@ begin
                             int_status_reg[`INT_CMD_EI] <= 1;
                         end
                         int_status_reg[`INT_CMD_CC] <= 1;
-                        if (expect_response != 0) begin
-                            response_0_o <= response_i[119:88];
-                            response_1_o <= response_i[87:56];
-                            response_2_o <= response_i[55:24];
-                            response_3_o <= {response_i[23:0], 8'h00};
-                        end
                         // end
                     end ////Data avaible
                 end //Status change
