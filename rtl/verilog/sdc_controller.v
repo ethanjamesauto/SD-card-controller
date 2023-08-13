@@ -184,7 +184,7 @@ assign sd_clk_o_pad  = sd_clk_o ;
 
 sd_cmd_master sd_cmd_master0(
     .sd_clk       (sd_clk_o),
-    .rst          (rst | software_reset_reg_sd_clk[0]),
+    .rst          (software_reset_reg_sd_clk[0]),
     .start_i      (cmd_start_sd_clk),
     .int_status_rst_i(cmd_int_rst_sd_clk),
     .setting_o    (cmd_setting),
@@ -208,8 +208,7 @@ sd_cmd_master sd_cmd_master0(
 
 sd_cmd_serial_host cmd_serial_host0(
     .sd_clk     (sd_clk_o),
-    .rst        (rst | 
-                 software_reset_reg_sd_clk[0] | 
+    .rst        (software_reset_reg_sd_clk[0] | 
                  go_idle),
     .setting_i  (cmd_setting),
     .cmd_i      (cmd),
@@ -225,8 +224,7 @@ sd_cmd_serial_host cmd_serial_host0(
 
 sd_data_master sd_data_master0(
     .sd_clk           (sd_clk_o),
-    .rst              (rst | 
-                       software_reset_reg_sd_clk[0]),
+    .rst              (software_reset_reg_sd_clk[0]),
     .start_tx_i       (data_start_tx),
     .start_rx_i       (data_start_rx),
     .timeout_i		  (data_timeout_reg),
@@ -245,7 +243,7 @@ sd_data_master sd_data_master0(
 
 sd_data_serial_host sd_data_serial_host0(
     .sd_clk         (sd_clk_o),
-    .rst            (rst | software_reset_reg_sd_clk[0]),
+    .rst            (software_reset_reg_sd_clk[0]),
     .data_in        (data_out_tx_fifo),
     .rd             (rd_fifo),
     .data_out       (data_in_rx_fifo),
@@ -264,7 +262,7 @@ sd_data_serial_host sd_data_serial_host0(
 
 sd_fifo_filler sd_fifo_filler0(
     .clk    (clk),
-    .rst       (rst | software_reset_reg_sd_clk[0]),
+    .rst       (software_reset_reg_sd_clk[0]),
 
     .rd_en_i   (rd_en_i),
     .rd_dat_o  (rd_dat_o),
@@ -285,7 +283,7 @@ sd_fifo_filler sd_fifo_filler0(
 
 sd_data_xfer_trig sd_data_xfer_trig0 (
     .sd_clk                (sd_clk_o),
-    .rst                   (rst | software_reset_reg_sd_clk[0]),
+    .rst                   (software_reset_reg_sd_clk[0]),
     .cmd_with_data_start_i (cmd_start_sd_clk & 
                             (command_reg[`CMD_WITH_DATA] != 
                              2'b00)),
