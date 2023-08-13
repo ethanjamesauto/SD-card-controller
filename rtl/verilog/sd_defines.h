@@ -47,7 +47,7 @@
 //////////////////////////////////////////////////////////////////////
 
 //global defines
-`define BLKSIZE_W 12
+`define BLKSIZE_W 9
 `define BLKCNT_W 16
 `define CMD_TIMEOUT_W 24
 `define DATA_TIMEOUT_W 24
