@@ -162,9 +162,9 @@ begin: FSM_COMBO
                 next_state = READ_WAIT;
         end
         READ_DAT: begin
-            if (transf_cnt == data_cycles+17 && next_block && crc_ok)
+            if (transf_cnt >= data_cycles+17 && next_block && crc_ok)
                 next_state = READ_WAIT;
-            else if (transf_cnt == data_cycles+17)
+            else if (transf_cnt >= data_cycles+17)
                 next_state = IDLE;
             else
                 next_state = READ_DAT;
@@ -275,7 +275,7 @@ begin: FSM_OUT
                     end
                     data_index <= data_index + 3'h1;
                     DAT_dat_o <= last_din;
-                    if (transf_cnt == data_cycles+1)
+                    if (transf_cnt >= data_cycles+1)
                         crc_en<=0;
                 end
                 else if (transf_cnt > data_cycles+1 & crc_c!=0) begin
