@@ -94,7 +94,6 @@ parameter READ_DAT   = 3'd6;
 reg [1:0] crc_status;
 reg busy_int;
 reg [`BLKCNT_W-1:0] blkcnt_reg;
-reg [`BLKSIZE_W-1:0] blksize_reg;
 reg next_block;
 wire start_bit;
 reg [4:0] crc_c;
@@ -200,7 +199,6 @@ begin: FSM_OUT
         data_index <= 0;
         next_block <= 0;
         blkcnt_reg <= 0;
-        blksize_reg <= 0;
         data_cycles <= 0;
         bus_4bit_reg <= 0;      
     end
@@ -221,7 +219,6 @@ begin: FSM_OUT
                 data_index <= 0;
                 next_block <= 0;
                 blkcnt_reg <= blkcnt;
-                blksize_reg <= blksize;
                 data_cycles <= (bus_4bit ? (blksize << 1) + `BLKSIZE_W'd2 : (blksize << 3) + `BLKSIZE_W'd8);
                 bus_4bit_reg <= bus_4bit;
             end
