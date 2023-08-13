@@ -114,7 +114,7 @@ parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
 parameter capabilies_reg = 16'b0000_0000_0000_0000;
 
 // 3 block sizes choices are supported.
-wire block_size_sel;
+wire [1:0] block_size_sel;
 assign block_size_reg = 
     block_size_sel == 0 ? 'd511 : 
     block_size_sel == 1 ? 'd63 : 'd7;
