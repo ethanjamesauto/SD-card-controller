@@ -75,7 +75,6 @@ module sd_data_serial_host(
 
 reg [3:0] DAT_dat_reg;
 reg [`BLKSIZE_W-1+3:0] data_cycles;
-reg bus_4bit_reg;
 //CRC16
 reg [3:0] crc_in;
 reg crc_en;
@@ -200,7 +199,6 @@ begin: FSM_OUT
         next_block <= 0;
         blkcnt_reg <= 0;
         data_cycles <= 0;
-        bus_4bit_reg <= 0;      
     end
     else begin
         state <= next_state;
@@ -220,7 +218,6 @@ begin: FSM_OUT
                 next_block <= 0;
                 blkcnt_reg <= blkcnt;
                 data_cycles <= (bus_4bit ? (blksize << 1) + `BLKSIZE_W'd2 : (blksize << 3) + `BLKSIZE_W'd8);
-                bus_4bit_reg <= bus_4bit;
             end
             WRITE_DAT: begin
                 crc_ok <= 0;
@@ -228,14 +225,14 @@ begin: FSM_OUT
                 next_block <= 0;
                 rd <= 0;
                 //special case TODO: still needed?
-                if (transf_cnt == 0 && bus_4bit_reg) begin
+                if (transf_cnt == 0 && bus_4bit) begin
                     rd <= 1;
                 end else
                 if (transf_cnt == 1) begin
                     //rd <= 1;
                     crc_rst <= 0;
                     crc_en <= 1;
-                    if (bus_4bit_reg) begin
+                    if (bus_4bit) begin
                         last_din <= data_in[7:4];
                         crc_in <= data_in[7:4];
                     end
@@ -244,12 +241,12 @@ begin: FSM_OUT
                         crc_in <= {3'h7, data_in[7]};
                     end
                     DAT_oe_o <= 1;
-                    DAT_dat_o <= bus_4bit_reg ? 4'h0 : 4'he;
-                    data_index <= bus_4bit_reg ? {2'b00, 2'b00, 1'b1} : {2'b00, 3'b001};
+                    DAT_dat_o <= bus_4bit ? 4'h0 : 4'he;
+                    data_index <= bus_4bit ? {2'b00, 2'b00, 1'b1} : {2'b00, 3'b001};
                 end
                 else if ((transf_cnt >= 2) && (transf_cnt <= data_cycles+1)) begin
                     DAT_oe_o<=1;
-                    if (bus_4bit_reg) begin
+                    if (bus_4bit) begin
                         last_din <= {
                             data_in[7-(data_index[0]<<2)], 
                             data_in[6-(data_index[0]<<2)], 
@@ -283,7 +280,7 @@ begin: FSM_OUT
                     crc_c <= crc_c - 5'h1;
                     DAT_oe_o <= 1;
                     DAT_dat_o[0] <= crc_out[0][crc_c-1];
-                    if (bus_4bit_reg)
+                    if (bus_4bit)
                         DAT_dat_o[3:1] <= {crc_out[3][crc_c-1], crc_out[2][crc_c-1], crc_out[1][crc_c-1]};
                     else
                         DAT_dat_o[3:1] <= {3'h7};
@@ -330,7 +327,7 @@ begin: FSM_OUT
             end
             READ_DAT: begin
                 if (transf_cnt < data_cycles) begin
-                    if (bus_4bit_reg) begin
+                    if (bus_4bit) begin
                         we <= (data_index[0] == 1 || (transf_cnt == data_cycles-1  && !(|blkcnt_reg)));
                         data_out[7-(data_index[0]<<2)] <= DAT_dat_reg[3];
                         data_out[6-(data_index[0]<<2)] <= DAT_dat_reg[2];
@@ -355,11 +352,11 @@ begin: FSM_OUT
                         crc_c <= crc_c - 5'h1;
                         if  (crc_out[0][crc_c] != last_din[0])
                             crc_ok <= 0;
-                        if  (crc_out[1][crc_c] != last_din[1] && bus_4bit_reg)
+                        if  (crc_out[1][crc_c] != last_din[1] && bus_4bit)
                             crc_ok<=0;
-                        if  (crc_out[2][crc_c] != last_din[2] && bus_4bit_reg)
+                        if  (crc_out[2][crc_c] != last_din[2] && bus_4bit)
                             crc_ok <= 0;
-                        if  (crc_out[3][crc_c] != last_din[3] && bus_4bit_reg)
+                        if  (crc_out[3][crc_c] != last_din[3] && bus_4bit)
                             crc_ok <= 0;
                         if (crc_c == 0) begin
                             next_block <= (blkcnt_reg != 0);
