@@ -113,6 +113,12 @@ output [`BLKCNT_W-1:0]block_count_reg;
 parameter voltage_controll_reg  = `SUPPLY_VOLTAGE_mV;
 parameter capabilies_reg = 16'b0000_0000_0000_0000;
 
+// 3 block sizes choices are supported.
+wire block_size_sel;
+assign block_size_reg = 
+    block_size_sel == 0 ? 'd511 : 
+    block_size_sel == 1 ? 'd63 : 'd7;
+
 wire [6:0] reg_addr = {addr[6:2], 2'b00};
 wire [1:0] byte_sel = addr[1:0];
 
@@ -121,7 +127,7 @@ byte_en_reg #(`CMD_REG_SIZE) command_r(clk, rst, we && reg_addr == `command, byt
 byte_en_reg #(1) reset_r(clk, rst, we && reg_addr == `reset, byte_sel, data_in, software_reset_reg);
 //byte_en_reg #(`CMD_TIMEOUT_W) cmd_timeout_r(clk, rst, we && reg_addr == `cmd_timeout, byte_sel, data_in, cmd_timeout_reg);
 //byte_en_reg #(`DATA_TIMEOUT_W) data_timeout_r(clk, rst, we && reg_addr == `data_timeout, byte_sel, data_in, data_timeout_reg);
-byte_en_reg #(`BLKSIZE_W, `RESET_BLOCK_SIZE) block_size_r(clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_reg);
+byte_en_reg #(2) block_size_r(clk, rst, we && reg_addr == `blksize, byte_sel, data_in, block_size_sel);
 byte_en_reg #(1) controll_r(clk, rst, we && reg_addr == `controller, byte_sel, data_in, controll_setting_reg);
 byte_en_reg #(8, 1) clock_d_r(clk, rst, we && reg_addr == `clock_d, byte_sel, data_in, clock_divider_reg);
 byte_en_reg #(`BLKCNT_W) block_count_r(clk, rst, we && reg_addr == `blkcnt, byte_sel, data_in, block_count_reg);
