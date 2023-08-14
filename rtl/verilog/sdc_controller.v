@@ -115,9 +115,6 @@ input [7:0] wr_dat_i;
 
 //SD clock
 wire sd_clk_o; //Sd_clk used in the system
-wire [3:0] wr_wbm_sel;
-wire [`BLKSIZE_W+`BLKCNT_W-1:0] xfersize;
-wire [31:0] wbm_adr;
 
 wire go_idle;
 wire cmd_start_sd_clk;
