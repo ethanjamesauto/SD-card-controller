@@ -161,25 +161,23 @@ assign cmd_o[39:38] = 2'b01;
 assign cmd_o[37:32] = command_i[`CMD_INDEX];  //CMD_INDEX
 assign cmd_o[31:0] = argument_i; //CMD_Argument
 
+always @(*) begin
+    index_check <= command_i[`CMD_IDX_CHECK];
+    crc_check <= command_i[`CMD_CRC_CHECK];
+    busy_check <= command_i[`CMD_BUSY_CHECK];
+end
+
 always @(posedge sd_clk or posedge rst)
 begin
     if (rst) begin
-        crc_check <= 0;
         int_status_reg <= 0;
-        expect_response <= 0;
-        long_response <= 0;
         start_xfr_o <= 0;
-        index_check <= 0;
-        busy_check <= 0;
         go_idle_o <= 0;
     end
     else begin
         case(state)
             IDLE: begin
                 go_idle_o <= 0;
-                index_check <= command_i[`CMD_IDX_CHECK];
-                crc_check <= command_i[`CMD_CRC_CHECK];
-                busy_check <= command_i[`CMD_BUSY_CHECK];
                 if (command_i[`CMD_RESPONSE_CHECK]  == 2'b10 || command_i[`CMD_RESPONSE_CHECK] == 2'b11) begin
                     expect_response <=  1;
                     long_response <= 1;
