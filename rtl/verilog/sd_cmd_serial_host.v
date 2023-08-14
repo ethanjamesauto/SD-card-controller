@@ -183,20 +183,11 @@ begin: FSM_COMBO
     endcase
 end
 
-always @(posedge sd_clk or posedge rst)
+always @(*)
 begin: COMMAND_DECODER
-    if (rst) begin
-        resp_len <= 0;
-        with_response <= 0;
-        cmd_buff <= 0;
-    end
-    else begin
-        if (start_i == 1) begin
-            resp_len <= setting_i[1] ? 127 : 39;
-            with_response <= setting_i[0];
-            cmd_buff <= cmd_i;
-        end
-    end
+    resp_len <= setting_i[1] ? 127 : 39;
+    with_response <= setting_i[0];
+    cmd_buff <= cmd_i;
 end
 
 //----------------Seq logic------------
