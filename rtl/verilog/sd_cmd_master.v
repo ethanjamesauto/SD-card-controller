@@ -56,7 +56,7 @@ module sd_cmd_master(
            output [1:0] setting_o,
            output reg start_xfr_o,
            output reg go_idle_o,
-           output reg  [39:0] cmd_o,
+           output [39:0] cmd_o,
            input [119:0] response_i,
            input crc_ok_i,
            input index_ok_i,
@@ -157,6 +157,10 @@ begin: FSM_SEQ
     end
 end
 
+assign cmd_o[39:38] = 2'b01;
+assign cmd_o[37:32] = command_i[`CMD_INDEX];  //CMD_INDEX
+assign cmd_o[31:0] = argument_i; //CMD_Argument
+
 always @(posedge sd_clk or posedge rst)
 begin
     if (rst) begin
@@ -164,7 +168,6 @@ begin
         int_status_reg <= 0;
         expect_response <= 0;
         long_response <= 0;
-        cmd_o <= 0;
         start_xfr_o <= 0;
         index_check <= 0;
         busy_check <= 0;
@@ -189,9 +192,6 @@ begin
                     expect_response <= 0;
                     long_response <= 0;
                 end
-                cmd_o[39:38] <= 2'b01;
-                cmd_o[37:32] <= command_i[`CMD_INDEX];  //CMD_INDEX
-                cmd_o[31:0] <= argument_i; //CMD_Argument
                 if (start_i) begin
                     start_xfr_o <= 1;
                     int_status_reg <= 0;
