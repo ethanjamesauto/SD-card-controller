@@ -175,6 +175,8 @@ begin: FSM_COMBO
         next_state = IDLE;
 end
 
+always @(*) data_cycles <= (bus_4bit ? (blksize << 1) + `BLKSIZE_W'd2 : (blksize << 3) + `BLKSIZE_W'd8);
+
 always @(posedge sd_clk or posedge rst)
 begin: FSM_OUT
     if (rst) begin
@@ -198,7 +200,6 @@ begin: FSM_OUT
         data_index <= 0;
         next_block <= 0;
         blkcnt_reg <= 0;
-        data_cycles <= 0;
     end
     else begin
         state <= next_state;
@@ -217,7 +218,6 @@ begin: FSM_OUT
                 data_index <= 0;
                 next_block <= 0;
                 blkcnt_reg <= blkcnt;
-                data_cycles <= (bus_4bit ? (blksize << 1) + `BLKSIZE_W'd2 : (blksize << 3) + `BLKSIZE_W'd8);
             end
             WRITE_DAT: begin
                 crc_ok <= 0;
