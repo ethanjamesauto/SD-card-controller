@@ -78,7 +78,6 @@ output reg cmd_oe_o;
 output reg cmd_out_o;
 
 //-------------Internal Constant-------------
-parameter INIT_DELAY = 4;
 parameter BITS_TO_SEND = 48;
 parameter CMD_SIZE = 40;
 parameter RESP_SIZE = 128;
@@ -101,7 +100,6 @@ reg [7:0] counter; // 0-255 range
 //-State Machine
 parameter STATE_SIZE = 3;
 parameter
-    INIT = 3'd0,
     IDLE = 3'd1,
     SETUP_CRC = 3'd2,
     WRITE = 3'd3,
@@ -132,14 +130,6 @@ assign response_o = resp_buff[119:0];
 always @(state or counter or start_i or with_response or cmd_dat_reg or resp_len)
 begin: FSM_COMBO
     case(state)
-        INIT: begin
-            if (counter >= INIT_DELAY) begin
-                next_state = IDLE;
-            end
-            else begin
-                next_state = INIT;
-            end
-        end
         IDLE: begin
             if (start_i) begin
                 next_state = SETUP_CRC;
@@ -179,7 +169,7 @@ begin: FSM_COMBO
         FINISH_WR:
             next_state = IDLE;
         default: 
-            next_state = INIT;
+            next_state = IDLE;
     endcase
 end
 
@@ -194,7 +184,7 @@ end
 always @(posedge sd_clk or posedge rst)
 begin: FSM_SEQ
     if (rst) begin
-        state <= INIT;
+        state <= IDLE;
     end
     else begin
         state <= next_state;
@@ -220,11 +210,6 @@ begin: FSM_OUT
     end
     else begin
         case(state)
-            INIT: begin
-                counter <= counter+1;
-                cmd_oe_o <= 1;
-                cmd_out_o <= 1;
-            end
             IDLE: begin
                 cmd_oe_o <= 0;      //Put CMD to Z
                 counter <= 0;
