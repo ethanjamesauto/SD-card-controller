@@ -108,7 +108,6 @@ parameter
     FINISH_WR = 3'd6,
     FINISH_WO = 3'd7;
 reg [STATE_SIZE-1:0] state;
-reg [STATE_SIZE-1:0] next_state;
 //Misc
 `define cmd_idx  (CMD_SIZE-1-counter) 
 
@@ -126,69 +125,11 @@ sd_crc_7 CRC_7(
 
 assign response_o = resp_buff[119:0];
 
-//------------------------------------------
-always @(state or counter or start_i or with_response or cmd_dat_reg or resp_len)
-begin: FSM_COMBO
-    case(state)
-        IDLE: begin
-            if (start_i) begin
-                next_state = SETUP_CRC;
-            end
-            else begin
-                next_state = IDLE;
-            end
-        end
-        SETUP_CRC:
-            next_state = WRITE;
-        WRITE:
-            if (counter >= BITS_TO_SEND && with_response) begin
-                next_state = READ_WAIT;
-            end
-            else if (counter >= BITS_TO_SEND) begin
-                next_state = FINISH_WO;
-            end
-            else begin
-                next_state = WRITE;
-            end
-        READ_WAIT:
-            if (!cmd_dat_reg) begin
-                next_state = READ;
-            end
-            else begin
-                next_state = READ_WAIT;
-            end
-        FINISH_WO:
-            next_state = IDLE;
-        READ:
-            if (counter >= resp_len+8) begin
-                next_state = FINISH_WR;
-            end
-            else begin
-                next_state = READ;
-            end
-        FINISH_WR:
-            next_state = IDLE;
-        default: 
-            next_state = IDLE;
-    endcase
-end
-
 always @(*)
 begin: COMMAND_DECODER
     resp_len <= setting_i[1] ? 127 : 39;
     with_response <= setting_i[0];
     cmd_buff <= cmd_i;
-end
-
-//----------------Seq logic------------
-always @(posedge sd_clk or posedge rst)
-begin: FSM_SEQ
-    if (rst) begin
-        state <= IDLE;
-    end
-    else begin
-        state <= next_state;
-    end
 end
 
 //-------------OUTPUT_LOGIC-------
@@ -207,6 +148,9 @@ begin: FSM_OUT
         crc_ok_o <= 0;
         crc_ok <= 0;
         counter <= 0;
+
+        // SM Transition
+        state <= IDLE;
     end
     else begin
         case(state)
@@ -218,11 +162,22 @@ begin: FSM_OUT
                 crc_ok_o <= 0;
                 index_ok_o <= 0;
                 finish_o <= 0;
+
+                // SM Transition
+                if (start_i) begin
+                    state <= SETUP_CRC;
+                end
+                else begin
+                    state <= IDLE;
+                end
             end
             SETUP_CRC: begin
                 crc_rst <= 0;
                 crc_enable <= 1;
                 crc_bit <= cmd_buff[`cmd_idx];
+
+                // SM Transition
+                state <= WRITE;
             end
             WRITE: begin
                 if (counter < BITS_TO_SEND-8) begin  // 1->40 CMD, (41 >= CNT && CNT <=47) CRC, 48 stop_bit
@@ -248,6 +203,17 @@ begin: FSM_OUT
                     cmd_out_o <= 1'b1;
                 end
                 counter <= counter+1;
+
+                // SM Transition
+                if (counter >= BITS_TO_SEND && with_response) begin
+                    state <= READ_WAIT;
+                end
+                else if (counter >= BITS_TO_SEND) begin
+                    state <= FINISH_WO;
+                end
+                else begin
+                    state <= WRITE;
+                end
             end
             READ_WAIT: begin
                 crc_enable <= 0;
@@ -255,6 +221,14 @@ begin: FSM_OUT
                 counter <= 1;
                 cmd_oe_o <= 0;
                 resp_buff[RESP_SIZE-1] <= cmd_dat_reg;
+
+                // SM Transition
+                if (!cmd_dat_reg) begin
+                    state <= READ;
+                end
+                else begin
+                    state <= READ_WAIT;
+                end
             end
             FINISH_WO: begin
                 finish_o <= 1;
@@ -262,6 +236,9 @@ begin: FSM_OUT
                 crc_rst <= 1;
                 counter <= 0;
                 cmd_oe_o <= 0;
+
+                // SM Transition
+                state <= IDLE;
             end
             READ: begin
                 crc_rst <= 0;
@@ -281,6 +258,14 @@ begin: FSM_OUT
                     else crc_ok <= 0;
                 end
                 counter <= counter + 1;
+
+                // SM Transition
+                if (counter >= resp_len+8) begin
+                    state <= FINISH_WR;
+                end
+                else begin
+                    state <= READ;
+                end
             end
             FINISH_WR: begin
                 if (cmd_buff[37:32] == resp_buff[125:120])
@@ -293,6 +278,9 @@ begin: FSM_OUT
                 crc_rst <= 1;
                 counter <= 0;
                 cmd_oe_o <= 0;
+
+                // SM Transition
+                state <= IDLE;
             end
         endcase
     end
