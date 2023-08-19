@@ -74,7 +74,7 @@ module sd_data_serial_host(
        );
 
 reg [3:0] DAT_dat_reg;
-reg [`BLKSIZE_W-1+3:0] data_cycles;
+reg [`BLKSIZE_W-1+4:0] data_cycles;
 //CRC16
 reg [3:0] crc_in;
 reg crc_en;
