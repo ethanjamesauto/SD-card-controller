@@ -73,13 +73,13 @@ module sd_data_master (
        );
 
 reg tx_cycle;
-parameter SIZE = 3;
+parameter SIZE = 2;
 reg [SIZE-1:0] state;
 reg [SIZE-1:0] next_state;
-parameter IDLE          = 3'b000;
-parameter START_TX_FIFO = 3'b001;
-parameter START_RX_FIFO = 3'b010;
-parameter DATA_TRANSFER = 3'b100;
+parameter IDLE          = 2'd0;
+parameter START_TX_FIFO = 2'd1;
+parameter START_RX_FIFO = 2'd2;
+parameter DATA_TRANSFER = 2'd3;
 
 reg trans_done;
 
