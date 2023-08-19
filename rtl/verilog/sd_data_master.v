@@ -75,60 +75,12 @@ module sd_data_master (
 reg tx_cycle;
 parameter SIZE = 2;
 reg [SIZE-1:0] state;
-reg [SIZE-1:0] next_state;
 parameter IDLE          = 2'd0;
 parameter START_TX_FIFO = 2'd1;
 parameter START_RX_FIFO = 2'd2;
 parameter DATA_TRANSFER = 2'd3;
 
 reg trans_done;
-
-always @(state or start_tx_i or start_rx_i or tx_fifo_full_i or xfr_complete_i or trans_done)
-begin: FSM_COMBO
-    case(state)
-        IDLE: begin
-            if (start_tx_i == 1) begin
-                next_state = START_TX_FIFO;
-            end
-            else if (start_rx_i == 1) begin
-                next_state = START_RX_FIFO;
-            end
-            else begin
-                next_state = IDLE;
-            end
-        end
-        START_TX_FIFO: begin
-            if (xfr_complete_i == 0)
-                next_state = DATA_TRANSFER;
-            else
-                next_state = START_TX_FIFO;
-        end
-        START_RX_FIFO: begin
-            if (xfr_complete_i == 0)
-                next_state = DATA_TRANSFER;
-            else
-                next_state = START_RX_FIFO;
-        end
-        DATA_TRANSFER: begin
-            if (trans_done)
-                next_state = IDLE;
-            else
-                next_state = DATA_TRANSFER;
-        end
-        default: next_state = IDLE;
-    endcase
-end
-
-//----------------Seq logic------------
-always @(posedge sd_clk or posedge rst)
-begin: FSM_SEQ
-    if (rst) begin
-        state <= IDLE;
-    end
-    else begin
-        state <= next_state;
-    end
-end
 
 //Output logic-----------------
 always @(posedge sd_clk or posedge rst)
@@ -141,6 +93,8 @@ begin
         trans_done <= 0;
         tx_cycle <= 0;
         int_status_o <= 0;
+
+        state <= IDLE;
     end
     else begin
         case(state)
@@ -151,18 +105,38 @@ begin
                 d_read_o <= 0;
                 trans_done <= 0;
                 tx_cycle <= 0;
+
+                if (start_tx_i == 1) begin
+                    state <= START_TX_FIFO;
+                end
+                else if (start_rx_i == 1) begin
+                    state <= START_RX_FIFO;
+                end
+                else begin
+                    state <= IDLE;
+                end
             end
             START_RX_FIFO: begin
                 start_rx_fifo_o <= 1;
                 start_tx_fifo_o <= 0;
                 tx_cycle <= 0;
                 d_read_o <= 1;
+
+                if (xfr_complete_i == 0)
+                    state <= DATA_TRANSFER;
+                else
+                    state <= START_RX_FIFO;
             end
             START_TX_FIFO:  begin
                 start_rx_fifo_o <= 0;
                 start_tx_fifo_o <= 1;
                 tx_cycle <= 1;
                 d_write_o <= 1;
+
+                if (xfr_complete_i == 0)
+                    state <= DATA_TRANSFER;
+                else
+                    state <= START_TX_FIFO;
             end
             DATA_TRANSFER: begin
                 d_read_o <= 0;
@@ -206,6 +180,11 @@ begin
                             int_status_o[`INT_DATA_CC] <= 1;
                     end
                 end
+
+                if (trans_done)
+                    state <= IDLE;
+                else
+                    state <= DATA_TRANSFER;
             end
         endcase
         if (int_status_rst_i)
