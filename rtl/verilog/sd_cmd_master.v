@@ -84,7 +84,6 @@ reg [`INT_CMD_SIZE-1:0] int_status_reg;
 //reg [3:0]debounce;
 parameter SIZE = 2;
 reg [SIZE-1:0] state;
-reg [SIZE-1:0] next_state;
 parameter IDLE       = 2'b00;
 parameter EXECUTE    = 2'b01;
 parameter BUSY_CHECK = 2'b10;
@@ -120,43 +119,6 @@ assign response_3_o = {response_i[23:0], 8'h00};
 //     end
 // end
 
-always @(state or start_i or finish_i or go_idle_o or busy_check or busy_i)
-begin: FSM_COMBO
-    case(state)
-        IDLE: begin
-            if (start_i)
-                next_state = EXECUTE;
-            else
-                next_state = IDLE;
-        end
-        EXECUTE: begin
-            if ((finish_i && !busy_check) || go_idle_o)
-                next_state = IDLE;
-            else if (finish_i && busy_check)
-                next_state = BUSY_CHECK;
-            else
-                next_state = EXECUTE;
-        end
-        BUSY_CHECK: begin
-            if (!busy_i)
-                next_state = IDLE;
-            else
-                next_state = BUSY_CHECK;
-        end
-        default: next_state = IDLE;
-    endcase
-end
-
-always @(posedge sd_clk or posedge rst)
-begin: FSM_SEQ
-    if (rst) begin
-        state <= IDLE;
-    end
-    else begin
-        state <= next_state;
-    end
-end
-
 assign cmd_o[39:38] = 2'b01;
 assign cmd_o[37:32] = command_i[`CMD_INDEX];  //CMD_INDEX
 assign cmd_o[31:0] = argument_i; //CMD_Argument
@@ -173,6 +135,8 @@ begin
         int_status_reg <= 0;
         start_xfr_o <= 0;
         go_idle_o <= 0;
+
+        state <= IDLE;
     end
     else begin
         case(state)
@@ -194,6 +158,12 @@ begin
                     start_xfr_o <= 1;
                     int_status_reg <= 0;
                 end
+
+                // SM Transition
+                if (start_i)
+                    state <= EXECUTE;
+                else
+                    state <= IDLE;
             end
             EXECUTE: begin
                 start_xfr_o <= 0;
@@ -212,10 +182,24 @@ begin
                         // end
                     end ////Data avaible
                 end //Status change
+
+                // SM Transition
+                if ((finish_i && !busy_check) || go_idle_o)
+                    state <= IDLE;
+                else if (finish_i && busy_check)
+                    state <= BUSY_CHECK;
+                else
+                    state <= EXECUTE;
             end //EXECUTE state
             BUSY_CHECK: begin
                 start_xfr_o <= 0;
                 go_idle_o <= 0;
+
+                // SM Transition
+                if (!busy_i)
+                    state <= IDLE;
+                else
+                    state <= BUSY_CHECK;
             end
         endcase
         if (int_status_rst_i)
