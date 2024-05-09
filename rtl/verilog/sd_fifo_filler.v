@@ -77,7 +77,7 @@ wire fifo_rd;
 reg fifo_rd_ack;
 reg fifo_rd_reg;
 
-//`define VIVADO
+`define VIVADO
 //`define RADIANT
 
 //assign fifo_rd = wbm_cyc_o & wbm_ack_i;
@@ -87,25 +87,39 @@ reg fifo_rd_reg;
 //assign wbm_cyc_o = en_rx_i ? en_rx_i & !wb_empty_o : en_tx_i & !wb_full_o;
 //assign wbm_stb_o = en_rx_i ? wbm_cyc_o & fifo_rd_ack : wbm_cyc_o;
 
+/*
+module monostable_domain_cross(
+    input rst,
+    input clk_a,
+    input in, 
+    input clk_b,
+    output out
+);*/
 `ifdef VIVADO
+    wire rd_en_i_cross, wr_en_i_cross;
+    monostable_domain_cross rd_en_cross(
+        .rst(rst), .clk_a(clk), .in(rd_en_i), .clk_b(sd_clk), .out(rd_en_i_cross)
+    );
+    monostable_domain_cross wr_en_cross(
+        .rst(rst), .clk_a(clk), .in(wr_en_i), .clk_b(sd_clk), .out(wr_en_i_cross)
+    );
+
     fifo_generator_0 rd_fifo(
-        .rd_clk(clk),
-        .wr_clk(sd_clk), 
+        .clk(sd_clk), 
         .rst(rst), 
         .din(dat_i), 
         .wr_en(wr_i),
         .dout(rd_dat_o), 
-        .rd_en(rd_en_i),
+        .rd_en(rd_en_i_cross),
         //.full(sd_full_o), 
         .empty(wb_empty_o)
     );
     assign sd_full_o = 1'b0;
-    fifo_generator_1 wr_fifo(
-        .rd_clk(sd_clk),
-        .wr_clk(clk), 
+    fifo_generator_0 wr_fifo(
+        .clk(sd_clk), 
         .rst(rst), 
         .din(wr_dat_i), 
-        .wr_en(wr_en_i),
+        .wr_en(wr_en_i_cross),
         .dout(dat_o), 
         .rd_en(rd_i), 
         .full(wb_full_o) 
@@ -136,21 +150,28 @@ reg fifo_rd_reg;
         .empty_o(sd_empty_o)
     );
 `else
-    generic_fifo_dc_gray #(
+
+    wire rd_en_i_cross, wr_en_i_cross;
+    monostable_domain_cross rd_en_cross(
+        .rst(rst), .clk_a(clk), .in(rd_en_i), .clk_b(sd_clk), .out(rd_en_i_cross)
+    );
+    monostable_domain_cross wr_en_cross(
+        .rst(rst), .clk_a(clk), .in(wr_en_i), .clk_b(sd_clk), .out(wr_en_i_cross)
+    );
+
+    generic_fifo_sc_a #(
         .dw(8), 
         .aw(`FIFO_MEM_ADR_SIZE)
         ) generic_fifo_dc_gray0 (
-        .rd_clk(clk),
-        .wr_clk(sd_clk), 
+        .clk(sd_clk), 
         .rst(!rst), 
         .din(dat_i), 
         .we(wr_i),
         .dout(rd_dat_o), 
-        .re(rd_en_i),
+        .re(rd_en_i_cross),
         //.full(sd_full_o), 
         .empty(wb_empty_o), 
-        .wr_level(), 
-        .rd_level(),
+        .level(), 
 
         `ifdef BENCHMARK 
             .clr(1'b1)
@@ -159,22 +180,20 @@ reg fifo_rd_reg;
         `endif
     );
     assign sd_full_o = 1'b0;
-    generic_fifo_dc_gray #(
+    generic_fifo_sc_a #(
         .dw(8), 
         .aw(`FIFO_MEM_ADR_SIZE)
         ) generic_fifo_dc_gray1 (
-        .rd_clk(sd_clk),
-        .wr_clk(clk), 
+        .clk(sd_clk),
         .rst(!rst), 
         .clr(1'b0), 
         .din(wr_dat_i), 
-        .we(wr_en_i),
+        .we(wr_en_i_cross),
         .dout(dat_o), 
         .re(rd_i), 
         .full(wb_full_o), 
         //.empty(sd_empty_o), 
-        .wr_level(), 
-        .rd_level() 
+        .level() 
     );
     assign sd_empty_o = 1'b0;
 `endif
